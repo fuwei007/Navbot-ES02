@@ -1,5 +1,8 @@
 # 迷你轮足机器人
 
+#### 成品
+ 连接：https://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo
+
 #### 介绍
 软件工具使用arduino IDE，主控芯片使用ESP32S3模组；用到PID控制器和运动学逆解等。
 
