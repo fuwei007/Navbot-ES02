@@ -1,7 +1,7 @@
 # 迷你轮足机器人
 
-#### 成品
-链接：https://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo
+#### [成品](http://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo
+)
 
 技术交流QQ群：1034018990
 
