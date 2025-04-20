@@ -2,6 +2,7 @@
 
 #### 成品
 链接：https://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo
+技术交流QQ群：1034018990
 
 #### 介绍
 软件工具使用arduino IDE，主控芯片使用ESP32S3模组；用到PID控制器和运动学逆解等。
