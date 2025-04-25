@@ -12,9 +12,9 @@
 
 技术交流QQ群：1034018990
 
-[视频](http://www.bilibili.com/video/BV1WQ5bz3ESg/?spm_id_from=333.337.search-card.all.click)
+[功能演示视频](http://www.bilibili.com/video/BV1WQ5bz3ESg/?spm_id_from=333.337.search-card.all.click)
 
-[成品](http://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo)
+[成品与配件购买](http://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo)
 
 #### 软件架构
 软件架构说明 更新中
