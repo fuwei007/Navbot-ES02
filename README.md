@@ -23,7 +23,7 @@
 #### 安装教程
 
 1.  [装配视频](https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click&vd_source=0521e93748b5b09affb73930c5d67d67)
-    ![输入图片说明](%E5%9B%BE%E7%89%87/%E8%BD%AE%E8%B6%B3%E8%A3%85%E9%85%8D.png)
+    [![输入图片说明](%E5%9B%BE%E7%89%87/%E8%BD%AE%E8%B6%B3%E8%A3%85%E9%85%8D.png)](https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click&vd_source=0521e93748b5b09affb73930c5d67d67)
 #### 使用说明
 
 1.  更新中
