@@ -22,7 +22,7 @@
 
 #### 安装教程
 
-1.  [装配视频](https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click)
+1.  [装配视频]![输入图片说明](%E5%9B%BE%E7%89%87/%E8%BD%AE%E8%B6%B3%E8%A3%85%E9%85%8D.png)(https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click)
 
 #### 使用说明
 
