@@ -22,7 +22,7 @@
 
 #### 安装教程
 
-1.  更新中
+1.  [装配视频](https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click)
 
 #### 使用说明
 
