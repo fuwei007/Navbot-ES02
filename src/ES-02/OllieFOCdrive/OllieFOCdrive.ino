@@ -2878,7 +2878,7 @@
         body.Serial1HZ =  body.Serial1count*40;
         body.Serial1count = 0;
       }
-4轮模式
+
       if(SwitchingPattern==1)//4-wheel mode
         MotorOperatingMode();
       
