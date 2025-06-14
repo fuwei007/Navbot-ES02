@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "filter.h"
 
-// 定义串口 1 的引脚
+// 定义串口 1 的引脚 -> // Define pins for Serial 1
 #define RXD1 20
 #define TXD1 19
 
@@ -27,8 +27,8 @@ typedef struct
   uint8_t state;  
   float dt;
   uint8_t ok; 
-  uint8_t rxdat[10];//接收数据的缓冲区
-  uint8_t rxbuf[10];//接收数据的缓冲区
+  uint8_t rxdat[10];//接收数据的缓冲区 -> uint8_t rxdat[10]; // Receive data buffer
+  uint8_t rxbuf[10];//接收数据的缓冲区 -> uint8_t rxbuf[10]; // Receive data buffer
   int P_count;
   int L_count;
   int start;

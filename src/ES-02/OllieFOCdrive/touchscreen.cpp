@@ -1,7 +1,7 @@
 #include "touchscreen.h"
 
 Touch_t Touch;
-biquadFilter_t TouchLPF[2];//二阶低通滤波器
+biquadFilter_t TouchLPF[2]; // Second-order low-pass filter
 
 
 uint8_t TouchOk = 0;
@@ -15,20 +15,20 @@ void TouchscreenInit(unsigned int cutoffFreq)
 }
 
 
-void ReadTouchDat(void) //读触屏数据数据
+void ReadTouchDat(void) // Read touch screen data
 {  
   /*
-  // 用于记录已读取的字节数
+  // Used to record the number of bytes read
   int bytesRead = 0;
-  // 检查串口缓冲区中是否有可用数据
+  // Check if there is available data in the serial buffer
   if (Serial1.available() >= 5) 
   {
-    // 等待直到读取到5个字节的数据
+    // Wait until 5 bytes of data are read
     while (bytesRead < 5) 
     {
-       // 读取一个字节的数据
+       // Read one byte of data
       Touch.rxdat[bytesRead] = Serial1.read();
-      // 已读取字节数加1
+      // Increment the number of bytes read
       bytesRead++; 
     }
  
@@ -50,7 +50,7 @@ void ReadTouchDat(void) //读触屏数据数据
         Touch.rxbuf[4] = 0;
         
     }
-    else if(TouchOk == 1)//按下数据
+    else if(TouchOk == 1) // Press data
     {
         TouchList++;
         Touch.rxbuf[TouchList] = dat;

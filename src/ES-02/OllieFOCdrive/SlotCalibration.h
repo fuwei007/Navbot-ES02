@@ -3,12 +3,12 @@
 #include <Arduino.h>
 #include <SimpleFOC.h>
 
-#define TorqueSamples 720 //采样数
-#define AngleResolutionRatio (_2PI/TorqueSamples) //弧度分辨率
-#define SlotVelocityLimit 0.03f //根据实际噪声调整
-#define SlotPositionErrorLimit 0.001f //根据实际噪声调整 位置误差限制 弧度
+#define TorqueSamples 720 // Number of samples
+#define AngleResolutionRatio (_2PI/TorqueSamples) // Angular resolution
+#define SlotVelocityLimit 0.03f // Adjust based on actual noise
+#define SlotPositionErrorLimit 0.001f // Adjust based on actual noise, position error limit in radians
 
-extern int Slot_calibration_mark;//标定完成标志
+extern int Slot_calibration_mark; // Calibration completion flag
 extern float Motor1_Current_sp_data[TorqueSamples];
 extern float Motor2_Current_sp_data[TorqueSamples];
 

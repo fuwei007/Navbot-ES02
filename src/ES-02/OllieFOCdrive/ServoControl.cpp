@@ -1,18 +1,18 @@
 #include "ServoControl.h"
 
 
-// 构造函数，初始化舵机引脚
+// Constructor, initialize servo pins
 ServoControl::ServoControl(int servo1Pin, int servo2Pin, int servo3Pin, int servo4Pin)
     : servo1Pin(servo1Pin), servo2Pin(servo2Pin), servo3Pin(servo3Pin), servo4Pin(servo4Pin) {}
 
-// 初始化舵机的PWM通道
+// Initialize PWM channels for servos
 void ServoControl::initialize() {
     ledcAttach(servo1Pin, PWM_FREQUENCY, PWM_RESOLUTION);
     ledcAttach(servo2Pin, PWM_FREQUENCY, PWM_RESOLUTION);
     ledcAttach(servo3Pin, PWM_FREQUENCY, PWM_RESOLUTION);
     ledcAttach(servo4Pin, PWM_FREQUENCY, PWM_RESOLUTION);
 
-    // 将四个舵机的初始角度设置为 0 度
+    // Set initial angle of four servos to 0 degrees
     setServosAngle(1, 0, -1, 0, -1, 0, 1, 0,1);
     delay(22);
     setServosAngle(1, 0, -1, 0, -1, 0, 1, 0,1);
@@ -21,7 +21,7 @@ void ServoControl::initialize() {
     delay(22);        
 }
 
-// 设置四个舵机的角度
+// Set angles for four servos
 void ServoControl::setServosAngle(int direction1, int angle1, int direction2, int angle2,
                                   int direction3, int angle3, int direction4, int angle4,float dt_ms) {
 
@@ -41,14 +41,14 @@ void ServoControl::setServosAngle(int direction1, int angle1, int direction2, in
     }                                
 }
 
-// 根据设置的方向和角度计算舵机的PWM占空比
+// Calculate servo PWM duty cycle based on direction and angle settings
 int ServoControl::calculateServoPwmDutyCycle(int direction, int angle) {
-    // 根据方向调整角度
+    // Adjust angle based on direction
     if (direction == -1) {
         angle = -angle;
     }
 
-    // 确保角度在 -90 到 90 度的有效范围内
+    // Ensure angle is within valid range of -90 to 90 degrees
     if (angle < -90) {
         angle = -90;
     }
@@ -56,10 +56,10 @@ int ServoControl::calculateServoPwmDutyCycle(int direction, int angle) {
         angle = 90;
     }
 
-    // 将 -90 到 90 度的角度映射到 0 到 180 度
+    // Map angle from -90 to 90 degrees to 0 to 180 degrees
     angle = map(angle, -90, 90, 0, 180);
 
-    // 确保映射后的角度在 0 到 180 度的有效范围内
+    // Ensure mapped angle is within valid range of 0 to 180 degrees
     if (angle < 0) {
         angle = 0;
     }
@@ -67,6 +67,6 @@ int ServoControl::calculateServoPwmDutyCycle(int direction, int angle) {
         angle = 180;
     }
 
-    // 通过线性映射计算出给定角度对应的PWM占空比
+    // Calculate PWM duty cycle for given angle through linear mapping
     return (int)(((MAX_PULSE_WIDTH_DUTY - MIN_PULSE_WIDTH_DUTY) / 180) * angle + MIN_PULSE_WIDTH_DUTY);
 }

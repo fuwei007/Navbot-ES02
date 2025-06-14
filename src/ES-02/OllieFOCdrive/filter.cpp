@@ -3,28 +3,28 @@
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
 
  
-// PT1低通滤波器
-//pt1获取滤波增益(截止频率 采样时间)
+// PT1 low-pass filter
+// Get filter gain for pt1 (cutoff frequency, sampling time)
 float pt1FilterGain(float f_cut, float dT)
 {
     float RC = 1 / (2 * M_PIf * f_cut);
     return dT / (RC + dT);
 }
 
-//pt1初始化低通滤波器
+// Initialize pt1 low-pass filter
 void pt1FilterInit(pt1Filter_t *filter, float k)
 {
     filter->state = 0.0f;
     filter->k = k;
 }
 
-//更新滤波增益
+// Update filter gain
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
 {
     filter->k = k;
 }
 
-//pt1低通滤波器应用
+// Apply pt1 low-pass filter
 float pt1FilterApply(pt1Filter_t *filter, float input)
 {
     filter->state = filter->state + filter->k * (input - filter->state);
@@ -32,15 +32,15 @@ float pt1FilterApply(pt1Filter_t *filter, float input)
 }
 
 
-//获取陷波滤波器Q给定的中心频率(f0)和较低的截止频率(f1)
-//Q = f0 / (f2 - f1);F2 = f02/ f1
-//（中心频率 截止频率）
+// Get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
+// Q = f0 / (f2 - f1);F2 = f02/ f1
+// (center frequency, cutoff frequency)
 float filterGetNotchQ(float centerFreq, float cutoffFreq)
 {
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
-//二阶低通滤波器初始化
+// Initialize second-order low-pass filter
 void biquadFilterInitLPF(biquadFilter_t *filter, unsigned int filterFreq ,unsigned int samplingFreq)
 {
     biquadFilterInit(filter, filterFreq, samplingFreq,  BIQUAD_Q, FILTER_LPF);
@@ -59,7 +59,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, unsigned int ref
 
 
 
-//二阶滤波器初始化
+// Initialize second-order filter
 void biquadFilterUpdate(biquadFilter_t *filter, unsigned int filterFreq, unsigned int refreshRate, float Q, biquadFilterType_e filterType)
 {
     // setup variables
@@ -110,7 +110,7 @@ void biquadFilterUpdate(biquadFilter_t *filter, unsigned int filterFreq, unsigne
 
 
 
-//二阶陷波器初始化(结构体变量 采样频率 中心频率 截止频率)
+// Initialize second-order notch filter (struct variable, sampling frequency, center frequency, cutoff frequency)
 void biquadFilterInitNotch(biquadFilter_t *filter, unsigned int samplingFreq, unsigned int filterFreq, unsigned int cutoffHz)
 {
     float Q = filterGetNotchQ(filterFreq, cutoffHz);
@@ -131,3 +131,4 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
 
     return result;
 }
+

@@ -3,7 +3,7 @@
 
 #include <SPI.h>
 
-// 定义 HSPI 引脚
+// Define HSPI pins
 #define SCK_PIN   3
 #define MOSI_PIN  9
 #define MISO_PIN  10
@@ -160,7 +160,7 @@
 #define ACCEL_AAF_ENABLE 0x00 
 #define ACCEL_AAF_DISABLE 0x01
 
-// 新增的配置宏定义
+// New configuration macro definitions
 #define FSR_0             0
 #define FSR_1             1
 #define FSR_2             2
@@ -186,7 +186,7 @@
 #define ODR_1_5625HZ      14
 #define ODR_500HZ         15
 
-// 结构体定义
+// Structure definitions
 typedef struct {
     uint8_t   accelODR: 4; 
     uint8_t   reserved: 1; 
@@ -250,7 +250,7 @@ typedef struct {
     uint8_t   reserved:2;
 } __attribute__ ((packed)) sGyroConfigStatic9_t;
 
-// 枚举定义
+// Enumeration definitions
 enum GyroFS{
     dps2000 = 0x00,
     dps1000 = 0x01,
@@ -269,24 +269,22 @@ enum AccelFS{
     gpm2 = 0x03
 };
 
-// 声明 hspi 为外部变量
+// Declare hspi as external variable
 extern SPIClass * hspi;
 
-// 陀螺仪零偏值
+// Gyroscope bias values
 extern float gyroBiasX;
 extern float gyroBiasY;
 extern float gyroBiasZ;
 
-
-// 函数声明
+// Function declarations
 void readBytes(uint8_t reg, uint8_t *data, uint8_t length);
 void writeBytes(uint8_t reg, uint8_t *data, uint8_t length);
 int16_t read16BitData(uint8_t reg_high, uint8_t reg_low);
 void selectUserBank(uint8_t bank);
 bool initICM42688();
 void readIMUData(int16_t &accelX, int16_t &accelY, int16_t &accelZ, int16_t &gyroX, int16_t &gyroY, int16_t &gyroZ, int16_t &temp);
-// 陀螺仪校准函数
+// Gyroscope calibration function
 void calibrateGyro();
-
 
 #endif

@@ -11,18 +11,18 @@ float Motor2_Current_sp_data[TorqueSamples]= {
 
 float Current_sp_data[TorqueSamples]= {0};
                                                                             
-float input_pos = 0;//目标位置
-int Current_sp_data_index = 0;//索引
-float pos_err = 0; //位置误差
-int Slot_calibration_mark = 0;//标定完成标志
+float input_pos = 0; // Target position
+int Current_sp_data_index = 0; // Index
+float pos_err = 0; // Position error
+int Slot_calibration_mark = 0; // Calibration completion flag
 
 void CalibrationCurrentSp(float Position_estimation,float Velocity_estimation,BLDCMotor *Motor)
 {
-  pos_err =  input_pos - Position_estimation; //目标值减去测量值
+  pos_err =  input_pos - Position_estimation; // Target value minus measured value
 
-  if( (fabs(pos_err) <= SlotPositionErrorLimit) && (fabs(Velocity_estimation)<=SlotVelocityLimit) )//采集数据
+  if( (fabs(pos_err) <= SlotPositionErrorLimit) && (fabs(Velocity_estimation)<=SlotVelocityLimit) ) // Collect data
   {
-    Current_sp_data[Current_sp_data_index] = Motor->current_sp;//
+    Current_sp_data[Current_sp_data_index] = Motor->current_sp; //
     Serial.print(Current_sp_data_index); 
     Serial.print("\t");     
     Serial.print("current_sp:"); 
@@ -45,16 +45,16 @@ void CalibrationCurrentSp(float Position_estimation,float Velocity_estimation,BL
     
   }
   
-  if(Current_sp_data_index < TorqueSamples)//更新位置
+  if(Current_sp_data_index < TorqueSamples) // Update position
   {
-    input_pos = Current_sp_data_index * AngleResolutionRatio;//目标角度
+    input_pos = Current_sp_data_index * AngleResolutionRatio; // Target angle
     Motor->target = input_pos;
     
     
   }
-  else//采样完成
+  else // Sampling completed
   {
-    Slot_calibration_mark = 1;//标定完成
+    Slot_calibration_mark = 1; // Calibration completed
     Serial.println(" ");
     Serial.println("current_sp ok"); 
     for(int i=0;i<TorqueSamples;i++)
