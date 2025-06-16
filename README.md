@@ -13,8 +13,7 @@ Full tutorial: [Frank Fu’s Build Guide](https://frankfu.blog/embodied-ai-robot
 
 -  **Self-balancing** using MPU6050 and PID control
 -  **Legged motion** using 270° digital servos
--  **Touchscreen interface** for motion control and debugging
--  **Optional web interface** via ESP32 Wi-Fi
+-  **Touchscreen interface**  achieve Ball-Balancing
 -  **Modular Arduino-based firmware** for easy customization
 
 ---
@@ -28,7 +27,7 @@ Full tutorial: [Frank Fu’s Build Guide](https://frankfu.blog/embodied-ai-robot
 | **Drivers**    | DRV8313 or L298N motor drivers                |
 | **IMU**        | MPU6050 6-DOF gyro + accelerometer            |
 | **Servos**     | 270° digital micro servos (e.g., GOUPRC)      |
-| **Display**    | 2.8" resistive/capacitive touchscreen         |
+| **HMI**    | 2.8" resistive/capacitive touchscreen         |
 | **Battery**    | 7.4V 2S Li-ion or LiPo                        |
 
 ---
