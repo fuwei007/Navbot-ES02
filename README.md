@@ -1,7 +1,7 @@
 
 # Navbot-ES02 - Open Source Desktop Dual-Wheel Legged Robot
 
-![robot](https://frankfu.blog/wp-content/uploads/2024/04/navbot-pose-1024x576.jpg)
+![robot](docs/image/photo1.JPG)
 
 **Navbot-ES02** is a compact, open-source desktop robot that combines self-balancing wheels with articulated legs. It’s an experimental platform for exploring locomotion, balance, and user interaction — ideal for makers, educators, and robotics enthusiasts.
 
