@@ -24,7 +24,7 @@ Full tutorial: [Frank Fu’s Build Guide](https://frankfu.blog/embodied-ai-robot
 | Component      | Description                                   |
 |----------------|-----------------------------------------------|
 | **MCU**        | ESP32-S3 DevKit                               |
-| **Motors**     | Brushless DC motors with encoders             |
+| **Motors**     |  [2208 90KV 3mm Shaft Gimbal Brushless Motors](https://a.co/d/5usBa8o)             |
 | **Drivers**    | DRV8313 or L298N motor drivers                |
 | **IMU**        | MPU6050 6-DOF gyro + accelerometer            |
 | **Servos**     | 270° digital micro servos (e.g., GOUPRC)      |
