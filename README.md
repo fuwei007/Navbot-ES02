@@ -1,34 +1,98 @@
-# Mini Wheeled-Leg Robot
 
-### Introduction
+# Navbot-ES02 - Open Source Desktop Dual-Wheel Legged Robot
 
-The Mini Wheeled-Leg Robot is designed for robotics control algorithm enthusiasts. This platform allows users to practice advanced algorithms such as PID, LQR controllers, and Kalman filters, making it an excellent tool for exploring the field of robotics control.
+![robot](https://frankfu.blog/wp-content/uploads/2024/04/navbot-pose-1024x576.jpg)
 
-Whether you're learning inverse kinematics, FOC motor drive techniques, or delving into other control methods, this platform provides hands-on experience that bridges theory and practical application.
+**Navbot-ES02** is a compact, open-source desktop robot that combines self-balancing wheels with articulated legs. It’s an experimental platform for exploring locomotion, balance, and user interaction — ideal for makers, educators, and robotics enthusiasts.
 
-Equipped with the ESP32S3 module, it features built-in WiFi and Bluetooth capabilities. This not only enables remote control, data transmission, and multi-robot collaboration, but also opens up limitless possibilities for creative development.
+Full tutorial: [Frank Fu’s Build Guide](https://frankfu.blog/embodied-ai-robot/diy-desktop-dual-wheel-legged-roboy/)
 
-To ensure development flexibility, the robot uses the Arduino IDE, which offers a simple interface, abundant libraries, and user-friendly logic. This significantly lowers the entry barrier, making it easy for beginners to get started and quickly complete debugging.
+---
 
-Even if you're a complete novice, you can begin development with ease.
+##  Key Features
 
-> Technical discussion group (QQ): 1034018990  
-> [Demo Video](http://www.bilibili.com/video/BV1WQ5bz3ESg/?spm_id_from=333.337.search-card.all.click)  
-> [Product & Parts Purchase](http://e.tb.cn/h.68HahNZxbi3Mf0G?tk=JHHiVc9SxGo)
+-  **Self-balancing** using MPU6050 and PID control
+-  **Legged motion** using 270° digital servos
+-  **Touchscreen interface** for motion control and debugging
+-  **Optional web interface** via ESP32 Wi-Fi
+-  **Modular Arduino-based firmware** for easy customization
 
-### Software Architecture
+---
 
-Details coming soon...
+## Hardware Overview
 
-### Installation Guide
+| Component      | Description                                   |
+|----------------|-----------------------------------------------|
+| **MCU**        | ESP32-S3 DevKit                               |
+| **Motors**     | Brushless DC motors with encoders             |
+| **Drivers**    | DRV8313 or L298N motor drivers                |
+| **IMU**        | MPU6050 6-DOF gyro + accelerometer            |
+| **Servos**     | 270° digital micro servos (e.g., GOUPRC)      |
+| **Display**    | 2.8" resistive/capacitive touchscreen         |
+| **Battery**    | 7.4V 2S Li-ion or LiPo                        |
 
-1. [Assembly Video](https://www.bilibili.com/video/BV1EwLizQEqM/?spm_id_from=333.1387.homepage.video_card.click&vd_source=0521e93748b5b09affb73930c5d67d67)  
-   ![Assembly Image](图片/轮足装配.png)
+---
 
-### Usage Instructions
 
-1. Coming soon...
 
-### Contributing
+## 📦 Software Structure
 
-1. Coming soon...
+```
+Navbot-ES02/
+├── OllieFOCdrive/     # Motor & balance control
+├── TouchUI/           # Touchscreen-based user interface
+├── WiFiControl/       # Optional WebSocket/HTML control panel
+├── partitions.csv     # Flash partition layout
+└── lib/               # Required Arduino libraries
+```
+
+---
+
+## Getting Started
+
+### 1. Install Requirements
+
+- Arduino IDE 2.x
+- ESP32 board package (`esp32@3.0.7`)
+- Libraries (via Library Manager or GitHub):
+  - [SimpleFOC](https://github.com/simplefoc/Arduino-FOC)
+  - [SimpleFOcDrivers](https://github.com/simplefoc/Arduino-FOC-drivers)
+  - [Preferences](https://github.com/vshymanskyy/Preferences)
+    
+### 2. Flash the Firmware
+
+```bash
+git clone https://github.com/fuwei007/Navbot-ES02.git
+```
+
+- Open `OllieFOCdrive.ino` with Arduino IDE
+- Select board: `ESP32S3 Dev Module`
+- Upload code and monitor via Serial for debugging
+
+---
+
+## Tourial Videos
+
+- DIY ES02 Desktop dual-wheel legged bot Preview:
+  
+  [![Video 2](https://img.youtube.com/vi/u7Jmyq_AXwc/0.jpg)](https://www.youtube.com/watch?v=u7Jmyq_AXwc)
+
+
+- Open Source ESP32 DIY Robot ES02: Learn Coding & Robotics | Educational Dual-Wheel Legged Bot:
+  [![Video 1](https://img.youtube.com/vi/hujr_VRSyrw/0.jpg)](https://www.youtube.com/watch?v=hujr_VRSyrw)
+
+
+---
+
+
+## Acknowledgments
+
+- [SimpleFOC Community](https://simplefoc.com/)
+- [Frank Fu’s Robotics Blog](https://frankfu.blog)
+- [LVGL GUI Library](https://lvgl.io/)
+- Arduino & ESP32 Open Source Communities
+
+---
+
+> Feel free to fork, contribute, or build your own version!  
+> PRs and feedback are always welcome.
