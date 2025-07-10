@@ -10,6 +10,12 @@
   #include "filter.h"
   #include "touchscreen.h"
 
+  #include "BleUtil.h"
+  #include "WiFiUtil.h"
+  #include "WebSocketClientUtil.h"
+  #include "WebSocketServerUtil.h"
+  #include "WebServerUtil.h"
+
   // commander communication instance
   Commander command = Commander(Serial);
 
@@ -390,6 +396,12 @@
     FlashInit();//Read flash data
     pinMode(LED_Pin, OUTPUT);
     digitalWrite(LED_Pin, LOW);   //亮
+
+    ble_init();
+    wifi_init();
+    web_sockets_client_init();
+    web_sockets_server_init();
+    web_server_util_init();
 
     body_data_init();
     //Initialize second-order low-pass filter
@@ -2807,6 +2819,13 @@
 
   void loop() {
     now_us = micros();
+
+    ble_loop();
+    wifi_loop();
+    web_sockets_client_loop();
+    web_sockets_server_loop();
+    web_server_util_loop();
+
     //now_us2 = micros();
 
     // iterative function setting the outter loop target
