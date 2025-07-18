@@ -69,6 +69,28 @@ git clone https://github.com/fuwei007/Navbot-ES02.git
 - Select board: `ESP32S3 Dev Module`
 - Upload code and monitor via Serial for debugging
 
+### 3. Connect the model remote control
+ES02 has 3 lines, namely GND, 5V, and sbus.
+
+<img src="docs/image/ES02 sbus wire.png" height="350"/>
+
+The remote control receiver may have multiple interfaces. It is necessary to confirm the sbus
+output port by yourself. The following picture shows the wiring ports of the RadioLink receiver.
+
+<img src="docs/image/RadioLink connector.png" height="350"/>
+
+The channels of the joystick are generally defaulted to ch1-4. Besides, six auxiliary channels
+are needed to switch on some functions. Each remote control is different, and they should be set
+according to personal habits. The corresponding functions of ch6-10 can be referred to as follows:
+
+- CH5 : 3-section switch, 0:stop, 1:start, 2:start and touch tablet enable. 
+- CH6 : 2-section switch, 0:posture mode, 1:mark mode. 
+- CH7 : 2-section switch, manual or auto roll, 0:manual , 1:auto . 
+- CH8 : 3-section switch, 0:default, 1:pitching adjust, 2:ball poise. 
+- CH9 : The x-coordinate of the small ball . 
+- CH10:The y-coordinate of the small ball.
+
+
 ---
 
 ## Tourial Videos
@@ -86,7 +108,7 @@ git clone https://github.com/fuwei007/Navbot-ES02.git
 ## Discord link
 | Link: [https://discord.gg/syywQ2CKN3](https://discord.gg/syywQ2CKN3)        |
 | :------------: |
-| <img src="Docs/image/Discord link.png" height="200"/> |
+| <img src="docs/image/discord link.png" height="200"/> |
 
 ---
 
