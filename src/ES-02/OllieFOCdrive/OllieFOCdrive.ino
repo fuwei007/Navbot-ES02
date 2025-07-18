@@ -13,21 +13,76 @@
   // commander communication instance
   Commander command = Commander(Serial);
 
-  // Set working mode
-  #define SensorSwitch          2   // 1: SPI  2: IIC AS5600     
-  #define Communication_object  0   // 0: 2-wheel balance || 4-wheel balance movement  1: simpleFOC Studio host computer  2: control dual motors  3: sample torque data
-  #define TorqueCompensation    0   // 1: torque compensation  0: no torque compensation (cannot be modified)
-  #define SwitchUser            4   // 0: view encoder position and direction  1: sample motor 1 torque compensation data  2: sample motor 2 torque compensation data  3: torque  4: speed  5: angle mode  
-  #define  CurrentUser          0   // 1: enable current loop
-  #define  M2CurrentUser        0   // 1: enable current loop for motor 2
+  // ----- Editable Constants
+  #define SensorSwitch          SENSOR_SWITCH_IIC_AS5600   // 1: SPI  2: IIC AS5600     
+  #define Communication_object  COMMUNICATION_OBJECT_TWO_OR_FOUR_WHEEL_BALANCE   // 0: 2-wheel balance || 4-wheel balance movement  1: simpleFOC Studio host computer  2: control dual motors  3: sample torque data
+  #define TorqueCompensation    TORQUE_COMPENSATION_OFF   // 1: torque compensation  0: no torque compensation (cannot be modified)
+  #define SwitchUser            SWITCH_USER_MODE_SPEED_MODE   // 0: view encoder position and direction  1: sample motor 1 torque compensation data  2: sample motor 2 torque compensation data  3: torque  4: speed  5: angle mode  
+  #define CurrentUser           CURRENT_LOOP_OFF   // 1: enable current loop
+  #define M2CurrentUser         CURRENT_LOOP_OFF   // 1: enable current loop for motor 2
 
-  #define  AdjusParameter       0   // 0: balance, speed, yaw, roll parameter tuning   1: ball pushing
-  #define  SwitchingPattern     0   // 0: two-wheel  1: four-wheel  switching mode 
-  #define  MasterSlaveSelection 1   // 0: slave   1: master 
+  #define  AdjusParameter       ADJUST_BALANCE_SPEED_YAW_ROLL   // 0: balance, speed, yaw, roll parameter tuning   1: ball pushing
+  #define  SwitchingPattern     SWITCHING_PATTERN_TWO_WHEEL_MODE   // 0: two-wheel  1: four-wheel  switching mode 
+  #define  MasterSlaveSelection MASTER_SLAVE_SELECTION_MASTER   // 0: slave   1: master
+
+  //      Two-Wheel PID Gains for Remote Control Mode (Without Touchscreen)
+  #define PID_ROLL_P_NO_TOUCH 0.06
+  #define PID_ROLL_I_NO_TOUCH 1.5
+  #define PID_ROLL_D_NO_TOUCH 0.0028
+  #define PID_ROLL_LIMIT_NO_TOUCH 2
+  #define PID_SPEED_P_NO_TOUCH 0.1
+  #define PID_SPEED_I_NO_TOUCH 0.1
+  #define PID_SPEED_D_NO_TOUCH 0
+  #define PID_SPEED_LIMIT_NO_TOUCH 50
+  #define PID_ANGLE_P_NO_TOUCH 7
+  #define PID_ANGLE_I_NO_TOUCH 222 // if stuttering/shaking when balancing, consider reducing this Integral value (ex. 165 instead of 222)
+  #define PID_ANGLE_D_NO_TOUCH 0.08
+  #define PID_ANGLE_LIMIT_NO_TOUCH 0.1
+
+  //      Two-Wheel PID Gains for Remote Control Mode (With Touchscreen)
+  #define PID_ROLL_P_WITH_TOUCH 0.08
+  #define PID_ROLL_I_WITH_TOUCH 1.5
+  #define PID_ROLL_D_WITH_TOUCH 0.005
+  #define PID_ROLL_LIMIT_WITH_TOUCH 2
+  #define PID_SPEED_P_WITH_TOUCH 0.12
+  #define PID_SPEED_I_WITH_TOUCH 0.12
+  #define PID_SPEED_D_WITH_TOUCH 0
+  #define PID_SPEED_LIMIT_WITH_TOUCH 50
+  #define PID_ANGLE_P_WITH_TOUCH 9
+  #define PID_ANGLE_I_WITH_TOUCH 222
+  #define PID_ANGLE_D_WITH_TOUCH 0.11
+  #define PID_ANGLE_LIMIT_WITH_TOUCH 0.1
+
+  #define IMU_SAMPLING_RATE_HZ 1000.0f // Sampling frequency
+  #define IMU_LPF_CUTOFF_FREQ_HZ 50.0f // Cutoff frequency for low-pass filter
+  #define IMU_CALL_COUNT 100           // Number of times the function is called
+
+  #define BODY_THIGH_LENGTH_M 0.035f // Thigh length (m)
+  #define BODY_SHANK_LENGTH_M 0.072f // Shank length (m)
+
+  #define BOARD_PIN_LED 35       // LED IO
+  #define BOARD_PIN_ANALOG_IN 17 // Battery voltage IO
+
+  #define IMU_ACCEL_RANGE_G 8.0             // Unit: g
+  #define IMU_GYRO_RANGE_DEG_PER_SEC 2000.0 // Unit: °/s
+
+  #define CUSTOM_SERVO_1_PIN 11
+  #define CUSTOM_SERVO_2_PIN 12
+  #define CUSTOM_SERVO_3_PIN 21
+  #define CUSTOM_SERVO_4_PIN 14
+
+  #define CURRENT_SENSOR_MV_PER_AMP 90.0f // ACS712-05B sensitivity is 185mV/A
+
+  #define SBUS_CHANNEL_MAX 1792
+  #define SBUS_CHANNEL_MIN 192
+
+  #define SERIAL_PACKET_HEADER_BYTE_1 12
+  #define SERIAL_PACKET_HEADER_BYTE_2 34
+  #define SERIAL_PACKET_END_BYTE 0
+  #define SERIAL_BAUD_RATE 250000
+  // -------------------------------------
 
   // Body
-  #define Thigh 0.035f      // Thigh length (m)
-  #define Shank 0.072f      // Shank length (m)
   float TargetLegLength = 0; // Target leg length
   float LegLength = 0.06f;   // Leg length
   float BarycenterX = 0;     // Center of mass X
@@ -37,7 +92,7 @@
   float BodyTurn = 0;        // Turning
   float SlideStep = 0;       // Slide step
   float BodyX = 0;           // X position (controller output)
-  int RobotTumble = 0;       // Robot tumble (fall detection)
+  int RobotTumble = ROBOT_TUMBLE_NO;       // Robot tumble (fall detection)
 
 
   body_t body;
@@ -68,11 +123,9 @@
     command.scalar(&enableDFilter, cmd);
   }
 
-  const int LED_Pin = 35; //LED IO
   int LED_HL = 1;
   int LED_count = 0;
   int LED_dt = 100;
-  const int analogInPin = 17; // Battery voltage IO
   int sensorValue = 0;        // value read from the pot
   biquadFilter_t VoltageFilterLPF; // Second-order low-pass filter
   uint16_t VoltageADC = 0; // Battery voltage ADC data
@@ -83,9 +136,7 @@
   // Create MahonyFilter object, set proportional gain and integral gain
   MahonyFilter mahonyFilter(0.4f, 0.001f);
   // Accelerometer range (here set to ±8g)
-  const float accelRange = 8.0;  // Unit: g
   // Gyroscope range (here assumed to be ±2000°/s)
-  const float gyroRange = 2000.0;       // Unit: °/s
   attitude_t attitude;
   float roll_ok;//
   float pitch_ok;//
@@ -95,11 +146,11 @@
   float IMUtime_dt = 0;
 
   /* Low-pass filter parameters */
-  float RATE_HZ_last = 1000.0f; // Sampling frequency
-  float LPF_CUTOFF_FREQ_last = 50.0f; // Cutoff frequency
+  float RATE_HZ_last = IMU_SAMPLING_RATE_HZ; // Sampling frequency
+  float LPF_CUTOFF_FREQ_last = IMU_LPF_CUTOFF_FREQ_HZ; // Cutoff frequency
 
-  float RATE_HZ = 1000.0f; // Sampling frequency
-  float LPF_CUTOFF_FREQ = 50.0f; // Cutoff frequency
+  float RATE_HZ = IMU_SAMPLING_RATE_HZ; // Sampling frequency
+  float LPF_CUTOFF_FREQ = IMU_LPF_CUTOFF_FREQ_HZ; // Cutoff frequency
   biquadFilter_t ImuFilterLPF[6]; // Second-order low-pass filter
 
 
@@ -143,19 +194,9 @@
     "servoAngle4"
   };
 
-
-  //  Define the number of times the function is called
-  const int CALL_COUNT = 100;//  Set the number of times the function is called
-  int callCounter = 0;  //  Call counter
-
-
+  int IMUCallCounter = 0;  //  Call counter
 
   //Servo
-  const int CUSTOM_SERVO_1_PIN = 11;
-  const int CUSTOM_SERVO_2_PIN = 12;
-  const int CUSTOM_SERVO_3_PIN = 21;
-  const int CUSTOM_SERVO_4_PIN = 14;
-
   void zeroBias_servo1(char* cmd)      {
     command.scalar(&zeroBias.servo1, cmd);
   }
@@ -169,6 +210,9 @@
     command.scalar(&zeroBias.servo4, cmd);
   }
 
+  bool pid_gains_mode_is_enabled(int mode) {
+    return (mode == REMOTE_CONTROL_PID_GAINS_MODE_ON_WITHOUT_TOUCH || mode == REMOTE_CONTROL_PID_GAINS_MODE_ON_WITH_TOUCH);
+  }
 
 
   //  Create ServoControl object, pass in the custom pin
@@ -178,22 +222,14 @@
   FUTABA_SBUS sBus;
   float sbuschx[8] = {0};
   int sbus_dt_ms = 0;
-  int sbus_swa = 0;
-  int sbus_swb = 0;
-  int sbus_swc = 0;
-  int sbus_swd = 0;
-  float sbus_vra = 0;
-  float sbus_vrb = 0;
-  float sbus_vraf = 0;
-  float sbus_vrbf = 0;
-
-  #define SBUS_chMax 1792
-  #define SBUS_chMin 192
-
-
-  #define Serial1_START1  12
-  #define Serial1_START2  34
-  #define Serial1_END1    0
+  int sbus_pid_gains_mode = REMOTE_CONTROL_PID_GAINS_MODE_OFF;
+  int sbus_posture_or_mark_mode = REMOTE_CONTROL_PM_POSTURE_MODE;
+  int sbus_roll_mode = REMOTE_CONTROL_ROLL_MODE_MANUAL;
+  int sbus_attitude_mode = REMOTE_CONTROL_ATTITUDE_MODE_DEFAULT;
+  float sbus_top_ball_x = 0;
+  float sbus_top_ball_y = 0;
+  float sbus_top_ball_x_smoothed = 0;
+  float sbus_top_ball_y_smoothed = 0;
 
 
   //  Create PID controller instance
@@ -246,7 +282,7 @@
     command.scalar(&CalibrationSelect, cmd);
   }
 
-  #if AdjusParameter == 0
+  #if AdjusParameter == ADJUST_BALANCE_SPEED_YAW_ROLL
   void CbAnglePid(char* cmd) {
     command.pid(&AnglePid, cmd);
   }
@@ -261,7 +297,7 @@
     command.pid(&RollPid, cmd);
   }
 
-  #elif AdjusParameter == 1
+  #elif AdjusParameter == ADJUST_BALL_PUSHING
 
   void CbTouchXPid(char* cmd)  {
     command.pid(&TouchXPid, cmd);
@@ -305,7 +341,7 @@
   BLDCMotor motor2 = BLDCMotor(7);
   BLDCDriver3PWM driver2 = BLDCDriver3PWM(40, 39, 38, 37);
 
-  #if SensorSwitch == 1
+  #if SensorSwitch == SENSOR_SWITCH_SPI
   // MagneticSensorSPI(int cs, float _cpr, int _angle_register)
   // config           - SPI config
   //  cs              - SPI chip select pin
@@ -314,7 +350,7 @@
   // these are valid pins (mosi, miso, sclk) for 2nd SPI bus on storm32 board (stm32f107rc)
   SPIClass * hspi = NULL;
 
-  #elif SensorSwitch == 2
+  #elif SensorSwitch == SENSOR_SWITCH_IIC_AS5600
   MagneticSensorI2C sensor2 = MagneticSensorI2C(AS5600_I2C);
   MagneticSensorI2C sensor1 = MagneticSensorI2C(AS5600_I2C);
   TwoWire I2Cone = TwoWire(0);
@@ -322,19 +358,16 @@
 
   #endif
 
-  // 1. Define the parameters of the current sensor
-  #define SENSOR_MV_PER_AMP 90.0f   // ACS712-05B sensitivity is 185mV/A
-
-  #if CurrentUser == 1
+  #if CurrentUser == CURRENT_LOOP_ON
   // inline current sensor instance
   // ACS712-05B has the resolution of 0.185mV per Amp
-  InlineCurrentSense current_sense1 = InlineCurrentSense(SENSOR_MV_PER_AMP, 18, 17);
+  InlineCurrentSense current_sense1 = InlineCurrentSense(CURRENT_SENSOR_MV_PER_AMP, 18, 17);
   #endif
 
-  #if M2CurrentUser == 1
+  #if M2CurrentUser == CURRENT_LOOP_ON
   // inline current sensor instance
   // ACS712-05B has the resolution of 0.185mV per Amp
-  InlineCurrentSense current_sense2 = InlineCurrentSense(SENSOR_MV_PER_AMP, 35, 36);
+  InlineCurrentSense current_sense2 = InlineCurrentSense(CURRENT_SENSOR_MV_PER_AMP, 35, 36);
   #endif
 
 
@@ -375,21 +408,28 @@
   void MotorOperatingMode(void);
 
 
-
+  /**
+   * @brief Initializes the robot's hardware and software components.
+   *
+   * This function runs once at startup. It configures serial communication,
+   * initializes sensors (IMU, encoders), sets up motors and drivers with SimpleFOC,
+   * configures PID controllers, initializes servos, reads calibration data from flash,
+   * and sets up the command interface for serial debugging and tuning.
+   */
   void setup() {
 
 
-    if((MasterSlaveSelection==0)&&(SwitchingPattern==1))//Slave && 4-wheel mode
+    if((MasterSlaveSelection==MASTER_SLAVE_SELECTION_SLAVE)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))//Slave && 4-wheel mode
       Serial2.begin(1000000, SERIAL_8N1, RXD2,TXD2 );
-    else if(MasterSlaveSelection==1)//Master
+    else if(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)//Master
       Serial1.begin(1000000, SERIAL_8N1, RXD1, TXD1);
 
 
     
-    Serial.begin(250000);
+    Serial.begin(SERIAL_BAUD_RATE);
     FlashInit();//Read flash data
-    pinMode(LED_Pin, OUTPUT);
-    digitalWrite(LED_Pin, LOW);   //亮
+    pinMode(BOARD_PIN_LED, OUTPUT);
+    digitalWrite(BOARD_PIN_LED, LOW);   //亮
 
     body_data_init();
     //Initialize second-order low-pass filter
@@ -408,7 +448,7 @@
 
     servoControl.setServosAngle(1, 0, -1, 0, -1, 0, 1, 0,1); //Assembly position
     //IMU
-    if(MasterSlaveSelection==1)//Master
+    if(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)//Master
     {
       if (!initICM42688()) {
         Serial.println("ICM42688 initialization failed!");
@@ -421,7 +461,7 @@
     //calibrateGyro();
     
     //Remote control
-    if(MasterSlaveSelection==1)//Master uses
+    if(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)//Master uses
       sBus.begin();
       
     for (int i = 0; i < 6; i++)
@@ -435,19 +475,19 @@
 
     
     // use monitoring with serial
-    if((SwitchingPattern==0)||(MasterSlaveSelection==0))//Two-wheel or slave mode
+    if((SwitchingPattern==SWITCHING_PATTERN_TWO_WHEEL_MODE)||(MasterSlaveSelection==MASTER_SLAVE_SELECTION_SLAVE))//Two-wheel or slave mode
       TouchscreenInit(500);
     // enable more verbose output for debugging
     // comment out if not needed
     SimpleFOCDebug::enable(&Serial);
 
-  #if SensorSwitch == 1
+  #if SensorSwitch == SENSOR_SWITCH_SPI
     hspi = new SPIClass(HSPI);
     hspi->begin(18, 5, 17);//(sck, miso, mosi)
     //initialise magnetic sensor1 hardware
     sensor1.init(hspi);
     sensor2.init(hspi);
-  #elif SensorSwitch == 2
+  #elif SensorSwitch == SENSOR_SWITCH_IIC_AS5600
     I2Cone.begin(4, 5, 400000);
     I2Ctwo.begin(41, 42, 400000);   //SDA1,SCL1
     sensor1.init(&I2Cone);
@@ -473,26 +513,26 @@
     motor1.linkDriver(&driver);
     motor2.linkDriver(&driver2);
     // link current sense and the driver
-  #if CurrentUser == 1
+  #if CurrentUser == CURRENT_LOOP_ON
     current_sense1.linkDriver(&driver);
   #endif
 
-  #if M2CurrentUser == 1
+  #if M2CurrentUser == CURRENT_LOOP_ON
     current_sense2.linkDriver(&driver2);
   #endif
 
 
     // control loop type and torque mode  velocity angle
-    if (CurrentUser == 1)
+    if (CurrentUser == CURRENT_LOOP_ON)
       motor1.torque_controller = TorqueControlType::dc_current;   //foc_current   dc_current  voltage
     else
       motor1.torque_controller = TorqueControlType::voltage;
 
-    if ((SwitchUser == 1)||(SwitchUser == 5))
+    if ((SwitchUser == SWITCH_USER_MODE_SAMPLE_TORQUE_M1)||(SwitchUser == SWITCH_USER_MODE_ANGLE_MODE))
       motor1.controller = MotionControlType::angle;
-    else if (SwitchUser == 3)
+    else if (SwitchUser == SWITCH_USER_MODE_TORQUE_MODE)
       motor1.controller = MotionControlType::torque;
-    else if (SwitchUser == 4)
+    else if (SwitchUser == SWITCH_USER_MODE_SPEED_MODE)
       motor1.controller = MotionControlType::velocity;
 
     motor1.motion_downsample = 0.0;//
@@ -500,7 +540,7 @@
     // velocity loop PID
     motor1.PID_velocity.P = 0.006;//0.07;
     motor1.PID_velocity.I = 0;
-    if(SwitchingPattern==1)
+    if(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE)
       motor1.PID_velocity.I = 0.8;
     motor1.PID_velocity.D = 0.0;
     motor1.PID_velocity.output_ramp = 10000;
@@ -545,7 +585,7 @@
     // Set PWM modulation to center alignment mode
     motor1.modulation_centered = 1.0;
 
-    if (M2CurrentUser == 1)
+    if (M2CurrentUser == CURRENT_LOOP_ON)
       // control loop type and torque mode velocity angle
       motor2.torque_controller = TorqueControlType::foc_current;//foc_current   dc_current  voltage
     else
@@ -553,11 +593,11 @@
       motor2.torque_controller = TorqueControlType::voltage;//foc_current   dc_current  voltage
 
 
-    if((SwitchUser == 2)||(SwitchUser == 5))
+    if((SwitchUser == SWITCH_USER_MODE_SAMPLE_TORQUE_M2)||(SwitchUser == SWITCH_USER_MODE_ANGLE_MODE))
       motor2.controller = MotionControlType::angle;
-    else if (SwitchUser == 3)
+    else if (SwitchUser == SWITCH_USER_MODE_TORQUE_MODE)
       motor2.controller = MotionControlType::torque;
-    else if (SwitchUser == 4)
+    else if (SwitchUser == SWITCH_USER_MODE_SPEED_MODE)
       motor2.controller = MotionControlType::velocity;
 
 
@@ -566,7 +606,7 @@
     // velocity loop PID
     motor2.PID_velocity.P = 0.006;
     motor2.PID_velocity.I = 0; 
-    if(SwitchingPattern==1)
+    if(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE)
       motor2.PID_velocity.I = 0.8;
     motor2.PID_velocity.D = 0;
     motor2.PID_velocity.output_ramp = 10000;
@@ -612,13 +652,13 @@
     motor2.foc_modulation = FOCModulationType::SpaceVectorPWM;
     motor2.modulation_centered = motor1.modulation_centered;
 
-  #if CurrentUser == 1
+  #if CurrentUser == CURRENT_LOOP_ON
     // current sense init and linking
     current_sense1.init();
     motor1.linkCurrentSense(&current_sense1);
   #endif
 
-  #if M2CurrentUser == 1
+  #if M2CurrentUser == CURRENT_LOOP_ON
     // current sense init and linking
     current_sense2.init();
     motor2.linkCurrentSense(&current_sense2);
@@ -631,7 +671,7 @@
     motor2.init();
     // align encoder and start FOC
 
-    if (SwitchUser == 0)
+    if (SwitchUser == SWITCH_USER_MODE_VIEW_ENCODER)
     {
       motor1.initFOC();
       motor2.initFOC();
@@ -693,13 +733,13 @@
     command.add('F', CutoffFreq, "my CutoffFreq");
     command.add('J', EnableDFilter, "my EnableDFilter");
 
-  #if AdjusParameter == 0
+  #if AdjusParameter == ADJUST_BALANCE_SPEED_YAW_ROLL
     command.add('P', CbAnglePid, "my AnglePid");
     command.add('S', CbSpeedPid, "my SpeedPid");
     command.add('Y', CbYawPid, "my YawPid");
     command.add('R', CbRollPid, "my RollPid");
     command.add('O', Target_Leg_Length, "my Target_Leg_Length");
-  #elif AdjusParameter == 1  
+  #elif AdjusParameter == ADJUST_BALL_PUSHING  
     command.add('L', CbTouchXPid, "my CbTouchXPid");
     command.add('N', CbTouchYPid, "my CbTouchYPid");
     command.add('G', ControlTorqueCompensation, "my ControlTorqueCompensation");
@@ -716,7 +756,11 @@
   }
 
 
-
+  /**
+   * @brief Validates the checksum of a received serial data buffer.
+   * @param buffer The byte array containing the received data packet.
+   * @return `true` if the checksum is correct, `false` otherwise.
+   */
   boolean crc1(unsigned char buffer[])
   {
     unsigned int crc_bit1 = 0;
@@ -733,7 +777,11 @@
       return false;
   }
 
-
+  /**
+   * @brief Calculates the checksum for a serial data buffer to be transmitted.
+   * @param buffer The byte array containing the data to be sent.
+   * @return The calculated 8-bit checksum.
+   */
   unsigned char crc2(unsigned char buffer[])
   {
     unsigned int crc_bit1 = 0;
@@ -749,12 +797,17 @@
   }
 
 
-
+  /**
+   * @brief Sends robot state data from the Master controller to the Slave via Serial1.
+   *
+   * This function is used in 4-wheel mode. It packs leg coordinates, motor targets,
+   * and gait information into a custom packet format with a checksum and sends it.
+   */
   void Send_Serial1(void)
   {
     //Start flag
-    serial1.txbuf[0] = Serial1_START1;
-    serial1.txbuf[1] = Serial1_START2;
+    serial1.txbuf[0] = SERIAL_PACKET_HEADER_BYTE_1;
+    serial1.txbuf[1] = SERIAL_PACKET_HEADER_BYTE_2;
     //Left leg coordinate x
     serial1.txbuf[2] = ((uint8_t *)&body.xo3)[0]; //
     serial1.txbuf[3] = ((uint8_t *)&body.xo3)[1];
@@ -795,7 +848,7 @@
     //Checksum
     serial1.txbuf[28] = crc2(serial1.txbuf);
     //End flag
-    serial1.txbuf[29] = Serial1_END1;
+    serial1.txbuf[29] = SERIAL_PACKET_END_BYTE;
 
     Serial1.write(serial1.txbuf, sizeof(serial1.txbuf));
 
@@ -803,7 +856,13 @@
 
 
 
-
+  /**
+   * @brief Reads and parses state data from the Slave controller on Serial1.
+   *
+   * This function is used by the Master controller in 4-wheel mode. It reads
+   * incoming bytes, validates the packet structure and checksum, and unpacks
+   * data such as touchscreen input and motor velocities from the Slave.
+   */
   void Read_Serial1(void) //Read serial port 1 data
   {
 
@@ -811,12 +870,12 @@
     {
       serial1.dat = Serial1.read();
       //Serial.println(serial1.dat);
-      if ((serial1.count == 0) && (serial1.dat == Serial1_START1))
+      if ((serial1.count == 0) && (serial1.dat == SERIAL_PACKET_HEADER_BYTE_1))
       {
         serial1.rxbuf[serial1.count] = serial1.dat;
         serial1.count = 1;
       }
-      else if ((serial1.count == 1) && (serial1.dat == Serial1_START2))
+      else if ((serial1.count == 1) && (serial1.dat == SERIAL_PACKET_HEADER_BYTE_2))
       {
         serial1.rxbuf[serial1.count] = serial1.dat;
         serial1.recstatu = 1;
@@ -900,12 +959,17 @@
   }
 
 
-
+  /**
+   * @brief Sends state data from the Slave controller to the Master via Serial2.
+   *
+   * This function is used in 4-wheel mode. It packs local data like touchscreen
+   * position and motor velocities into a custom packet and sends it to the Master.
+   */
   void Send_Serial2(void)
   {
     //Start flag
-    serial2.txbuf[0] = Serial1_START1;
-    serial2.txbuf[1] = Serial1_START2;
+    serial2.txbuf[0] = SERIAL_PACKET_HEADER_BYTE_1;
+    serial2.txbuf[1] = SERIAL_PACKET_HEADER_BYTE_2;
 
     //Touch screen x position
     serial2.txbuf[2] = ((uint8_t *)&Touch.XPdatF)[0]; //
@@ -947,13 +1011,19 @@
     //Checksum
     serial2.txbuf[28] = crc2(serial2.txbuf);
     //End flag
-    serial2.txbuf[29] = Serial1_END1;
+    serial2.txbuf[29] = SERIAL_PACKET_END_BYTE;
 
     Serial2.write(serial2.txbuf, sizeof(serial2.txbuf));
 
   }
 
-
+  /**
+   * @brief Reads and parses command data from the Master controller on Serial2.
+   *
+   * This function is used by the Slave controller in 4-wheel mode. It reads
+   * incoming bytes, validates the packet, and unpacks target leg coordinates
+   * and motor commands sent from the Master.
+   */
   void Read_Serial2(void) //Read serial port 2 data
   {
     
@@ -961,12 +1031,12 @@
     {
       serial2.dat = Serial2.read();
       //Serial.println(serial2.dat);
-      if ((serial2.count == 0) && (serial2.dat == Serial1_START1))
+      if ((serial2.count == 0) && (serial2.dat == SERIAL_PACKET_HEADER_BYTE_1))
       {
         serial2.rxbuf[serial2.count] = serial2.dat;
         serial2.count = 1;
       }
-      else if ((serial2.count == 1) && (serial2.dat == Serial1_START2))
+      else if ((serial2.count == 1) && (serial2.dat == SERIAL_PACKET_HEADER_BYTE_2))
       {
         serial2.rxbuf[serial2.count] = serial2.dat;
         serial2.recstatu = 1;
@@ -1054,7 +1124,16 @@
     }
   }
 
-
+  /**
+   * @brief Re-maps a number from one range to another, using floating-point precision.
+   *
+   * @param x The number to map.
+   * @param in_min The lower bound of the value's current range.
+   * @param in_max The upper bound of the value's current range.
+   * @param out_min The lower bound of the value's target range.
+   * @param out_max The upper bound of the value's target range.
+   * @return The mapped value.
+   */
   float mapf(long x, long in_min, long in_max, float out_min, float out_max)
   {
     long divisor = (in_max - in_min);
@@ -1064,6 +1143,13 @@
     return (x - in_min) * (out_max - out_min) / divisor + out_min;
   }
 
+  /**
+   * @brief Reads and processes data from the FUTABA S.BUS remote controller.
+   *
+   * This function decodes the S.BUS signal, maps the raw channel values to
+   * meaningful control variables like `MovementSpeed`, `BodyTurn`, `LegLength`,
+   * and `BodyPitching`, and updates global state based on the RC switch positions.
+   */
   void RXsbus()
   {
     static unsigned long now_ms = millis();
@@ -1077,40 +1163,40 @@
       sBus.UpdateChannels();
       sBus.toChannels = 0;
 
-      MovementSpeed =  mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -15, 15);
-      BodyTurn      =  -mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -11, 11);
-      sbus_swa      =  map(sBus.channels[4], SBUS_chMin, SBUS_chMax, 0, 2);
-      sbus_swb      =  map(sBus.channels[5], SBUS_chMin, SBUS_chMax, 0, 1);
-      sbus_swc      =  map(sBus.channels[6], SBUS_chMin, SBUS_chMax, 0, 1);
-      sbus_swd      =  map(sBus.channels[7], SBUS_chMin, SBUS_chMax, 0, 2);
-      sbuschx[8]    =  map(sBus.channels[8], SBUS_chMin, SBUS_chMax, 0, 100);
-      sbuschx[9]    =  map(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0, 100);
+      MovementSpeed =  mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -15, 15);
+      BodyTurn      =  -mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -11, 11);
+      sbus_pid_gains_mode = map(sBus.channels[4], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 2);
+      sbus_posture_or_mark_mode = map(sBus.channels[5], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 1);
+      sbus_roll_mode = map(sBus.channels[6], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 1);
+      sbus_attitude_mode = map(sBus.channels[7], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 2);
+      sbuschx[8]    =  map(sBus.channels[8], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 100);
+      sbuschx[9]    =  map(sBus.channels[9], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0, 100);
 
       //Top ball
-      sbus_vra    =  mapf(sBus.channels[8], SBUS_chMin, SBUS_chMax, -5, 5);//Modify top ball target position
-      sbus_vrb    =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, -5, 5);
+      sbus_top_ball_x    =  mapf(sBus.channels[8], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -5, 5);//Modify top ball target position
+      sbus_top_ball_y    =  mapf(sBus.channels[9], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -5, 5);
 
-      if (sbus_swd == 0)//Attitude control 1
+      if (sbus_attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_DEFAULT)//Attitude control 1
       {
         //SlideStep = mapf(sBus.channels[0],SBUS_chMin, SBUS_chMax, -0.05,0.05);//Slide step
         if(sBus.channels[1]<=992)
-          LegLength = mapf(sBus.channels[1], SBUS_chMin, 992, 0.05, 0.06); //Leg height
+          LegLength = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, 992, 0.05, 0.06); //Leg height
         else
-          LegLength = mapf(sBus.channels[1], 993, SBUS_chMax, 0.06, 0.1); //Leg height
+          LegLength = mapf(sBus.channels[1], 993, SBUS_CHANNEL_MAX, 0.06, 0.1); //Leg height
       }
-      else if (sbus_swd == 1)//Attitude control 2
+      else if (sbus_attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_PITCHING_ADJUST)//Attitude control 2
       {
         //BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); //Roll
         //sbus_vrb    =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, -25, 25);
-        BodyPitching = mapf(sBus.channels[1], SBUS_chMin, SBUS_chMax, -12, 12); //Pitching       + sbus_vrb
+        BodyPitching = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -12, 12); //Pitching       + sbus_vrb
       }
-      else if (sbus_swd == 2)//Attitude control 3
+      else if (sbus_attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)//Attitude control 3
       {
         //LegLength = 0.06;
         if(sBus.channels[1]<=992)
-          LegLength = mapf(sBus.channels[1], SBUS_chMin, 992, 0.05, 0.06); 
+          LegLength = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, 992, 0.05, 0.06); 
         else
-          LegLength = mapf(sBus.channels[1], 993, SBUS_chMax, 0.06, 0.07); 
+          LegLength = mapf(sBus.channels[1], 993, SBUS_CHANNEL_MAX, 0.06, 0.07); 
 
       
         //BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); 
@@ -1119,11 +1205,11 @@
       }
 
 
-      BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); 
+      BodyRoll =  mapf(sBus.channels[0], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.011, 0.011); 
 
       if(Voltage<=7.4)
       {
-        //sbus_swa = 0;
+        //sbus_pid_gains_mode = REMOTE_CONTROL_MODE_PID_GAINS_MODE_OFF
         Serial.print(" Voltage:");
         Serial.println(Voltage, 5);      
       }
@@ -1173,29 +1259,49 @@
   }
 
 
-
+  /**
+   * @brief Converts an angle from radians to degrees.
+   * @param arc The angle in radians.
+   * @return The angle in degrees.
+   */
   float ArcToAngle(float arc)//Convert radians to degrees
   {
     float angle = arc * (180 / PI);
     return angle;
   }
 
+  /**
+   * @brief Converts an angle from degrees to radians.
+   * @param angle The angle in degrees.
+   * @return The angle in radians.
+   */
   float AngleToArc(float angle)//Convert degrees to radians
   {
     float art = angle * (PI / 180);
     return art;
   }
 
-
-  //Five-link dynamic inverse kinematics
+  /**
+   * @brief Calculates the required servo angles for the right leg using inverse kinematics.
+   *
+   * This function solves the geometry of the five-bar linkage for the right leg
+   * to determine the two servo angles needed to place the foot at a desired
+   * (x, y) coordinate relative to the body, considering the body's pitch angle.
+   *
+   * @param x The target horizontal position of the foot (m).
+   * @param y The target vertical position (height) of the foot (m).
+   * @param p The pitch angle of the robot's body (degrees).
+   * @param ax A pointer to a float array where the two calculated servo angles (in degrees) will be stored.
+   * @return An error code (0 for success, 1 or 2 if the target is out of reach).
+   */
   int RightInverseKinematics(float x, float y, float p, float* ax)
   {
     x = constrain(x, -0.05, 0.05);
     y = constrain(y, 0.05, 0.1);
     
     int error = 0;//Coordinate setting exception
-    float AB = Thigh;// Thigh length (m) AB=ED
-    float BC = Shank;// Shank length (m) BC=DC
+    float AB = BODY_THIGH_LENGTH_M;// Thigh length (m) AB=ED
+    float BC = BODY_SHANK_LENGTH_M;// Shank length (m) BC=DC
 
     float OA = 0.017f; //
     float aOCF = 0;
@@ -1263,7 +1369,19 @@
   }
 
 
-
+  /**
+   * @brief Calculates the required servo angles for the left leg using inverse kinematics.
+   *
+   * This function solves the geometry of the five-bar linkage for the left leg.
+   * It mirrors the calculation of the right leg to find the servo angles needed
+   * to place the foot at a desired (x, y) coordinate.
+   *
+   * @param x The target horizontal position of the foot (m).
+   * @param y The target vertical position (height) of the foot (m).
+   * @param p The pitch angle of the robot's body (degrees).
+   * @param ax A pointer to a float array where the two calculated servo angles (in degrees) will be stored.
+   * @return An error code (0 for success, 1 or 2 if the target is out of reach).
+   */
   int LeftInverseKinematics(float x, float y, float p, float* ax)
   {
     x = constrain(x, -0.05, 0.05);
@@ -1272,8 +1390,8 @@
     x = -x;
     p = -p;
     int error = 0;//Coordinate setting exception
-    float AB = Thigh;// Thigh length (m) AB=ED
-    float BC = Shank;// Shank length (m) BC=DC
+    float AB = BODY_THIGH_LENGTH_M;// Thigh length (m) AB=ED
+    float BC = BODY_SHANK_LENGTH_M;// Shank length (m) BC=DC
 
     float OA = 0.017f; //
     float aOCF = 0;
@@ -1341,6 +1459,19 @@
   }
 
 
+  /**
+   * @brief Reads data from the IMU, filters it, and updates the robot's attitude.
+   *
+   * This function is called periodically. It performs the following steps:
+   * 1. Reads raw accelerometer and gyroscope data from the ICM42688 sensor.
+   * 2. Applies pre-calibrated gyro bias offsets.
+   * 3. Converts raw sensor values to standard units (g and rad/s).
+   * 4. Applies a digital biquad low-pass filter to smooth the sensor data.
+   * 5. Feeds the filtered data into the Mahony filter to get a stable orientation quaternion.
+   * 6. Converts the quaternion to Euler angles (roll, pitch, yaw).
+   * 7. Applies the roll and pitch zero-bias offsets to get the final, corrected attitude.
+   * It also runs a complementary filter in parallel, likely for comparison or debugging.
+   */
   void ImuUpdate(void)
   {
     unsigned long timestamp_now = micros();
@@ -1355,15 +1486,15 @@
     gyroZ -= (int16_t)gyroBiasZ;
 
     // Convert the accelerometer data to g units
-    attitude.acc.x = (float)accelX * accelRange / 32768.0;
-    attitude.acc.y = (float)accelY * accelRange / 32768.0;
-    attitude.acc.z = (float)accelZ * accelRange / 32768.0;
+    attitude.acc.x = (float)accelX * IMU_ACCEL_RANGE_G / 32768.0;
+    attitude.acc.y = (float)accelY * IMU_ACCEL_RANGE_G / 32768.0;
+    attitude.acc.z = (float)accelZ * IMU_ACCEL_RANGE_G / 32768.0;
 
 
     // Convert the gyroscope data to rad/s
-    attitude.gyro.x = (float)gyroX * gyroRange / 32768.0 * (3.1415926f / 180.0f);
-    attitude.gyro.y = (float)gyroY * gyroRange / 32768.0 * (3.1415926f / 180.0f);
-    attitude.gyro.z = (float)gyroZ * gyroRange / 32768.0 * (3.1415926f / 180.0f);
+    attitude.gyro.x = (float)gyroX * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0 * (3.1415926f / 180.0f);
+    attitude.gyro.y = (float)gyroY * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0 * (3.1415926f / 180.0f);
+    attitude.gyro.z = (float)gyroZ * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0 * (3.1415926f / 180.0f);
 
 
     //Software second-order low-pass filter
@@ -1396,9 +1527,9 @@
     angleAccX = atan2(attitude.acc.y, attitude.acc.z + abs(attitude.acc.x)) * 360 / 2.0 / PI;
     angleAccY = atan2(attitude.acc.x, attitude.acc.z + abs(attitude.acc.y)) * 360 / -2.0 / PI;
 
-    gyroX = (float)gyroX * gyroRange / 32768.0;
-    gyroY = (float)gyroY * gyroRange / 32768.0;
-    gyroZ = (float)gyroZ * gyroRange / 32768.0;
+    gyroX = (float)gyroX * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0;
+    gyroY = (float)gyroY * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0;
+    gyroZ = (float)gyroZ * IMU_GYRO_RANGE_DEG_PER_SEC / 32768.0;
 
     angleGyroX += gyroX * IMUtime_dt;
     angleGyroY += gyroY * IMUtime_dt;
@@ -1414,6 +1545,15 @@
   }
 
 
+  /**
+   * @brief Initializes and reads calibration data from the ESP32's non-volatile flash memory.
+   *
+   * This function uses the Preferences library to load saved values for:
+   * - Roll and pitch angle zero-bias offsets.
+   * - Gyroscope X, Y, and Z axis bias offsets.
+   * - Servo trim/offset values for all four leg servos.
+   * If a value is not found in flash, it defaults to 0.0. The loaded values are printed to the serial monitor.
+   */
   void FlashInit(void)
   {
     preferences.begin("preferences", false);
@@ -1468,7 +1608,14 @@
   }
 
 
-  // Function to calculate the Euler angle zero bias
+  /**
+   * @brief Calculates and saves the zero-bias offset for the IMU's roll and pitch angles.
+   *
+   * This function should be called when the robot is stationary and level.
+   * It accumulates a number of IMU readings (defined by `CALL_COUNT`),
+   * calculates the average roll and pitch, and saves these averages to flash
+   * memory as the zero-bias offset. This ensures the robot knows what "level" is.
+   */
   void calculateZeroBias() {
     // Initialize the accumulator
     static float rollSum = 0;
@@ -1479,13 +1626,13 @@
     pitchSum += attitude.pitch;
 
     // Increase the call counter
-    callCounter++;
+    IMUCallCounter++;
 
-    if (callCounter >= CALL_COUNT)
+    if (IMUCallCounter >= IMU_CALL_COUNT)
     {
       // Calculate the average value to get the zero bias
-      zeroBias.roll = rollSum / CALL_COUNT;
-      zeroBias.pitch = pitchSum / CALL_COUNT;
+      zeroBias.roll = rollSum / IMU_CALL_COUNT;
+      zeroBias.pitch = pitchSum / IMU_CALL_COUNT;
 
       // Initialize flash access, open the "preferences" namespace
       // The second parameter is false, indicating that the namespace is opened in write mode
@@ -1510,7 +1657,7 @@
       Serial.println(zeroBias.pitch);
       rollSum = 0;
       pitchSum = 0;
-      callCounter = 0;//Clear the next time
+      IMUCallCounter = 0;//Clear the next time
       CalibrationSelect = 0;//Calibration complete exit calibration
 
     }
@@ -1518,6 +1665,17 @@
   }
 
 
+  /**
+   * @brief Manages the saving of different calibration profiles to flash memory.
+   *
+   * This function is controlled by the `CalibrationSelect` variable, which is set
+   * via the serial commander.
+   *
+   * @param sw The calibration mode to execute:
+   *           - 1: Calibrates the gyroscope and saves its bias values.
+   *           - 2: Calls `calculateZeroBias()` to calibrate the roll/pitch angle offsets.
+   *           - 3: Saves any adjustments made to the servo trim values.
+   */
   void FlashSave(int sw)
   {
 
@@ -1635,6 +1793,15 @@
   }
 
 
+  /**
+   * @brief Prints debugging data to the serial port based on a selection variable.
+   *
+   * This function uses a large switch statement controlled by the global `Select`
+   * variable (which can be set via the serial commander). Each case prints a
+   * different set of variables, such as IMU data, PID controller states, motor
+   * velocities, S.BUS channels, etc. This is a flexible way to debug different
+   * parts of the system without recompiling.
+   */
   void print_data(void)
   {
     switch ((int)Select)
@@ -1907,7 +2074,7 @@
 
       case 20:
               Serial.print(" vra:");
-              Serial.print(sbus_vra, 6);
+              Serial.print(sbus_top_ball_x, 6);
               Serial.print(" BodyRoll:");
               Serial.print(BodyRoll, 6);
               Serial.print(" LegLength:");
@@ -2017,9 +2184,9 @@
               Serial.print("  S:");
               Serial.print(SlideStep_f);  
               Serial.print("  vra:");
-              Serial.print(sbus_vra);
+              Serial.print(sbus_top_ball_x);
               Serial.print("  vra:");
-              Serial.println(sbus_vrb);
+              Serial.println(sbus_top_ball_y);
               break;
 
       case 29:
@@ -2105,13 +2272,13 @@
 
       case 37:
               Serial.print(" sbus_vra:");
-              Serial.print(sbus_vra);
+              Serial.print(sbus_top_ball_x);
               Serial.print(" sbus_vraf:");
-              Serial.print(sbus_vraf);      
+              Serial.print(sbus_top_ball_x_smoothed);      
               Serial.print(" sbus_vrb:");
-              Serial.print(sbus_vrb);
+              Serial.print(sbus_top_ball_y);
               Serial.print(" sbus_vrbf:");
-              Serial.println(sbus_vrbf);            
+              Serial.println(sbus_top_ball_y_smoothed);            
               break;
 
       case 38:
@@ -2213,7 +2380,7 @@
               Serial.print(body.Serial1HZ); 
               
               Serial.print(" sbus_swb:");
-              Serial.println(sbus_swb); 
+              Serial.println(sbus_posture_or_mark_mode); 
     
               break;    
 
@@ -2247,7 +2414,7 @@
               Serial.print(body.Ts,4); 
           
               Serial.print(" bodyH:");
-              Serial.println(sbus_vrb,4);  
+              Serial.println(sbus_top_ball_y,4);  
     
               break;   
 
@@ -2301,8 +2468,16 @@
 
 
 
-
-
+  /**
+   * @brief Applies a polynomial correction to the body pitching value.
+   *
+   * This function implements a quadratic correction formula. This is likely an
+   * empirical correction factor to compensate for nonlinearities in the system
+   * dynamics or sensor readings, improving balance performance.
+   *
+   * @param x The raw body pitching value.
+   * @return The corrected body pitching value.
+   */
   float BodyPitchingCorrect(float x)//Pitch angle correction
   {
     float y = 0.000004*x*x + 0.0004*x - 0.0008;//y = 4E-06x2 + 0.0004x - 0.0008    y = -2E-07x2 + 0.0002x - 0.0029
@@ -2311,7 +2486,17 @@
 
 
 
-
+  /**
+   * @brief Legacy PID controller for two-wheel balancing (likely deprecated).
+   *
+   * This function implements a cascade PID control loop for balancing:
+   * 1. A speed loop calculates a target angle based on forward/backward velocity error.
+   * 2. A balance loop calculates motor output based on the error from the target angle.
+   * 3. A yaw loop adds differential torque for turning.
+   * This appears to be an older version, with `PIDcontroller_posture` being the active one.
+   *
+   * @param dt The time delta since the last call, in seconds.
+   */
   void PIDcontroller_angle(float dt)
   {
     //Speed loop 
@@ -2359,49 +2544,56 @@
     motor2.target = target2;
   }
 
-
+  /**
+   * @brief Sets the PID gains for the main controllers based on the S.BUS switch `sbus_pid_gains_mode`.
+   *
+   * This allows for switching between two sets of PID parameters on the fly using the
+   * remote controller. One set is tuned for operation without the touchscreen, and
+   * the other for operation with the touchscreen, which may change the robot's
+   * weight distribution and dynamics.
+   */
   void PidParameter(void)
   {
-    if(sbus_swa == 1)//No touch screen
+    if(sbus_pid_gains_mode == REMOTE_CONTROL_PID_GAINS_MODE_ON_WITHOUT_TOUCH)//No touch screen
     {
         //Roll
-        RollPid.P = 0.06;
-        RollPid.I = 1.5;
-        RollPid.D = 0.0028;
-        RollPid.limit = 2;//Integral limit
+        RollPid.P = PID_ROLL_P_NO_TOUCH;
+        RollPid.I = PID_ROLL_I_NO_TOUCH;
+        RollPid.D = PID_ROLL_D_NO_TOUCH;
+        RollPid.limit = PID_ROLL_LIMIT_NO_TOUCH;//Integral limit
 
         //Speed loop
-        SpeedPid.P = 0.1;
-        SpeedPid.I = 0.1;
-        SpeedPid.D = 0;
-        SpeedPid.limit = 50;//Integral limit    
+        SpeedPid.P = PID_SPEED_P_NO_TOUCH;
+        SpeedPid.I = PID_SPEED_I_NO_TOUCH;
+        SpeedPid.D = PID_SPEED_D_NO_TOUCH;
+        SpeedPid.limit = PID_SPEED_LIMIT_NO_TOUCH;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 7;
-        AnglePid.I = 222;
-        AnglePid.D = 0.08;
-        AnglePid.limit = 0.1;//Integral limit
+        AnglePid.P = PID_ANGLE_P_NO_TOUCH;
+        AnglePid.I = PID_ANGLE_I_NO_TOUCH;
+        AnglePid.D = PID_ANGLE_D_NO_TOUCH;
+        AnglePid.limit = PID_ANGLE_LIMIT_NO_TOUCH;//Integral limit
         
     } 
-    else if(sbus_swa == 2)//With touch screen
+    else if(sbus_pid_gains_mode == REMOTE_CONTROL_PID_GAINS_MODE_ON_WITH_TOUCH)//With touch screen
     {
         //Roll
-        RollPid.P = 0.08;
-        RollPid.I = 1.5;
-        RollPid.D = 0.005;
-        RollPid.limit = 2;//Integral limit
+        RollPid.P = PID_ROLL_P_WITH_TOUCH;
+        RollPid.I = PID_ROLL_I_WITH_TOUCH;
+        RollPid.D = PID_ROLL_D_WITH_TOUCH;
+        RollPid.limit = PID_ROLL_LIMIT_WITH_TOUCH;//Integral limit
 
         //Speed loop
-        SpeedPid.P = 0.12;
-        SpeedPid.I = 0.12;
-        SpeedPid.D = 0;
-        SpeedPid.limit = 50;//Integral limit    
+        SpeedPid.P = PID_SPEED_P_WITH_TOUCH;
+        SpeedPid.I = PID_SPEED_I_WITH_TOUCH;
+        SpeedPid.D = PID_SPEED_D_WITH_TOUCH;
+        SpeedPid.limit = PID_SPEED_LIMIT_WITH_TOUCH;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 9;
-        AnglePid.I = 222;
-        AnglePid.D = 0.11;
-        AnglePid.limit = 0.1;//Integral limit
+        AnglePid.P = PID_ANGLE_P_WITH_TOUCH;
+        AnglePid.I = PID_ANGLE_I_WITH_TOUCH;
+        AnglePid.D = PID_ANGLE_D_WITH_TOUCH;
+        AnglePid.limit = PID_ANGLE_LIMIT_WITH_TOUCH;//Integral limit
             
     } 
 
@@ -2422,7 +2614,19 @@
       TouchYPid.limit = 0;//Integral limit
   }
 
-
+  /**
+   * @brief Main PID control loop for two-wheel balancing and posture control.
+   *
+   * This is the core control function for the two-wheeled mode. It orchestrates
+   * multiple PID controllers to achieve stable balancing and respond to commands.
+   * - It runs PID loops for the touchscreen input to generate `BodyPitching` and roll commands.
+   * - It runs a PID loop for roll stabilization.
+   * - It runs a cascade PID for speed and balance control (Speed loop -> Angle loop).
+   * - It runs a PID loop for yaw (turning) control.
+   * The outputs are summed to produce the final `target` values for each motor.
+   *
+   * @param dt The time delta since the last call, in seconds.
+   */
   void PIDcontroller_posture(float dt)
   {
     if((int)PidParameterTuning==0)
@@ -2450,15 +2654,15 @@
     TouchX_Pid.deriv = constrain(TouchX_Pid.deriv, -11000, 11000);
     TouchX_Pid.outD = TouchX_kd * TouchX_Pid.deriv;  
     
-    if((sbus_swd == 2)||(sbus_swc == 1))//Top ball mode 
+    if((sbus_attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)||(sbus_roll_mode == REMOTE_CONTROL_ROLL_MODE_AUTO))//Top ball mode 
     {
-      BodyPitching = TouchX_Pid.outP + TouchX_Pid.outI + TouchX_Pid.outD + sbus_vraf;
+      BodyPitching = TouchX_Pid.outP + TouchX_Pid.outI + TouchX_Pid.outD + sbus_top_ball_x_smoothed;
       BodyPitching = -BodyPitching;    
     }  
 
     TouchY_Pid.deriv = constrain(TouchY_Pid.deriv, -11000, 11000);
     TouchY_Pid.outD = TouchY_kd * TouchY_Pid.deriv;  
-    TouchY_Pid.output = TouchY_Pid.outP + TouchY_Pid.outI + TouchY_Pid.outD + sbus_vrbf;
+    TouchY_Pid.output = TouchY_Pid.outP + TouchY_Pid.outI + TouchY_Pid.outD + sbus_top_ball_y_smoothed;
     if((int)enableDFilter==1)
     {
       TouchY_Pid_outputF = biquadFilterApply(&FilterLPF[10], TouchY_Pid.output);    
@@ -2511,7 +2715,7 @@
       Touch.start = -2;    
     }  
     
-    if((sbus_swd != 2)||(sbus_swc != 1))//Non-top ball mode 
+    if((sbus_attitude_mode != REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)||(sbus_roll_mode != REMOTE_CONTROL_ROLL_MODE_AUTO))//Non-top ball mode 
     {
       TouchX_Pid.integral = 0;
       TouchX_Pid.output = 0;
@@ -2532,10 +2736,10 @@
     Roll_Pid.iLimit = RollPid.limit;//Integral limit
 
     float TargetBodyRoll = BodyRoll_f*777; //Roll
-    if(sbus_swd==2)//Top ball禁止手动横滚
+    if(sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)//Top ball禁止手动横滚
       TargetBodyRoll = 0;
     float RollError = (-pitch_ok) - (-TargetBodyRoll) - (-TouchY_Pid_outputF);  
-    if(sbus_swc == 1)//Roll leveling
+    if(sbus_roll_mode == REMOTE_CONTROL_ROLL_MODE_AUTO)//Roll leveling
     {
         Roll_Pid.compute(RollError, dt);    
     }
@@ -2570,7 +2774,7 @@
     Yaw_Pid.Ki = YawPid.I; 
     Yaw_Pid.Kd = YawPid.D;
     Yaw_Pid.iLimit = YawPid.limit;
-    if(sbus_swc != 1)//Lock heading angle
+    if(sbus_roll_mode != REMOTE_CONTROL_ROLL_MODE_AUTO)//Lock heading angle
     {
       Yaw_Pid.Ki = 0;
       Yaw_Pid.integral = 0;
@@ -2603,19 +2807,26 @@
 
 
 
-
+  /**
+   * @brief Applies a low-pass filter to the remote control input values.
+   *
+   * This function smooths the raw values received from the S.BUS controller
+   * (`BodyPitching`, `BodyRoll`, `LegLength`, etc.) using biquad low-pass filters.
+   * This prevents jerky movements and improves the stability of the robot's response
+   * to user commands. The filter cutoff frequency can be adjusted live.
+   */
   void RemoteControlFiltering(void)//Remote control filter
   {
     static int enableDFilter_last = (int)enableDFilter;
     static int cutoffFreq_last = (int)cutoffFreq;
 
-    sbus_vraf = biquadFilterApply(&FilterLPF[8], sbus_vra);
-    sbus_vrbf = biquadFilterApply(&FilterLPF[9], sbus_vrb); 
+    sbus_top_ball_x_smoothed = biquadFilterApply(&FilterLPF[8], sbus_top_ball_x);
+    sbus_top_ball_y_smoothed = biquadFilterApply(&FilterLPF[9], sbus_top_ball_y); 
 
     if((int)enableDFilter==1)
     {
       if(body.MotorMode>=3)
-        body.BodyPitching4WheelT = mapf(sBus.channels[1], SBUS_chMin, SBUS_chMax, -0.011, 0.011); //Pitch      
+        body.BodyPitching4WheelT = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.011, 0.011); //Pitch      
       else
         BodyPitching_f = biquadFilterApply(&FilterLPF[0], BodyPitching);// 
 
@@ -2650,14 +2861,27 @@
       
   }
 
+  /**
+   * @brief Reads and filters the battery voltage.
+   *
+   * Reads the analog value from the voltage divider, applies a low-pass filter
+   * to get a stable reading, and converts it to the actual voltage.
+   */
   void ReadVoltage(void)
   {
-    VoltageADC = analogRead(analogInPin);
+    VoltageADC = analogRead(BOARD_PIN_ANALOG_IN);
     VoltageADCf = biquadFilterApply(&VoltageFilterLPF, VoltageADC);
     Voltage = (float)7.77/813.43*VoltageADCf;
   }
 
-
+  /**
+   * @brief Detects if the robot has fallen over.
+   *
+   * If the absolute roll angle exceeds a threshold (35 degrees) for a certain
+   * number of consecutive cycles, it sets the `RobotTumble` flag to 1. The flag
+   * is reset to 0 only after the robot is brought back to a near-level position.
+   * This is a safety feature to disable motors upon falling.
+   */
   void Robot_Tumble(void)
   {
       static int x = 0;
@@ -2667,18 +2891,18 @@
         if(x>=20)
         {
           x=20;
-          RobotTumble=1;//Machine fall
+          RobotTumble=ROBOT_TUMBLE_YES;//Machine fall
         }      
       }  
       else
       {
-        if((RobotTumble==1)&&(abs(roll_ok)<=5))//Machine fall after fall
+        if((RobotTumble==ROBOT_TUMBLE_YES)&&(abs(roll_ok)<=5))//Machine fall after fall
         {
           x--;
           if(x<=0)
           {
             x = 0;
-            RobotTumble = 0;  
+            RobotTumble = ROBOT_TUMBLE_NO;  
           }
         }
       }
@@ -2686,8 +2910,13 @@
 
 
 
-
-
+  /**
+   * @brief Initializes the parameters for the gait generation algorithm.
+   *
+   * Sets default values for the robot's gait, including step height (`h`),
+   * step length (`xt`), period (`Ts`), and other parameters related to the
+   * cycloidal foot trajectory used in the `TrotGaitAlgorithm`.
+   */
   void body_data_init(void)//
   {
     //  Gait parameters
@@ -2716,7 +2945,15 @@
     
   }
 
-
+  /**
+   * @brief Generates foot trajectories for a trot gait in four-wheel mode.
+   *
+   * This function implements a gait pattern generator based on cycloidal trajectories.
+   * A trot gait involves moving diagonal pairs of legs together. The function
+   * calculates the desired horizontal (`xo`) and vertical (`zo`) position for each
+   * of the four feet at the current point in the gait cycle (`CurrentSteps`).
+   * The resulting foot positions are then passed to the inverse kinematics solver.
+   */
   void TrotGaitAlgorithm(void)//Trot gait
   {
       body.CurrentSteps = body.CurrentSteps + body.delayTime;//Gait time
@@ -2804,18 +3041,31 @@
       }
   }
 
-
+  /**
+   * @brief The main execution loop of the program.
+   *
+   * This function runs repeatedly after `setup()` is complete. It is the heart
+   * of the robot's operation, responsible for:
+   * 1. Calling the SimpleFOC `move()` and `loopFOC()` methods to update motor states.
+   * 2. Handling serial communication (commander, master/slave protocol).
+   * 3. Reading sensors (IMU, RC, Touchscreen).
+   * 4. Calling the appropriate high-level control functions (`PIDcontroller_posture`, `TrotGaitAlgorithm`) based on the robot's current mode.
+   * 5. Calculating inverse kinematics to determine servo angles.
+   * 6. Sending final commands to the servos.
+   * 7. Handling safety checks like fall detection.
+   * 8. Printing debug data.
+   */
   void loop() {
     now_us = micros();
     //now_us2 = micros();
 
     // iterative function setting the outter loop target
 
-    if (Communication_object == 1)
+    if (Communication_object == COMMUNICATION_OBJECT_SIMPLEFOC_STUDIO)
     {
       motor1.monitor();//When using the simpleFOC Studio upper computer, this sentence must be opened. But it will affect the program execution speed
     }
-    else if (Communication_object == 2)
+    else if (Communication_object == COMMUNICATION_OBJECT_CONTROL_DUAL_MOTORS)
     {
       motor2.target = motor1.target;
     }
@@ -2826,14 +3076,14 @@
     //Torque compensation
     float indexF = sensor1.getMechanicalAngle() / AngleResolutionRatio;
     int index = round(indexF);
-    if ((TorqueCompensation == 1) && (SwitchUser != 1) && (SwitchUser != 2))
+    if ((TorqueCompensation == TORQUE_COMPENSATION_ON) && (SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M1) && (SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M2))
     {
       motor1.current_sp = motor1.current_sp + Motor1_Current_sp_data[index];
     }
 
     indexF = sensor2.getMechanicalAngle() / AngleResolutionRatio;
     index = round(indexF);
-    if ((TorqueCompensation == 1) && (SwitchUser != 1) && (SwitchUser != 2))
+    if ((TorqueCompensation == TORQUE_COMPENSATION_ON) && (SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M1) && (SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M2))
     {
       motor2.current_sp = motor2.current_sp + Motor2_Current_sp_data[index];
     }
@@ -2856,7 +3106,7 @@
     
 
 
-    if(MasterSlaveSelection==1)
+    if(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)
     {
       ImuUpdate();//Update IMU data   
       RXsbus(); 
@@ -2864,7 +3114,7 @@
 
     
 
-    if((SwitchingPattern==0)||(MasterSlaveSelection==0))//Two-wheel or slave mode
+    if((SwitchingPattern==SWITCHING_PATTERN_TWO_WHEEL_MODE)||(MasterSlaveSelection==MASTER_SLAVE_SELECTION_SLAVE))//Two-wheel or slave mode
       ReadTouchDat();
       
     time_dt = (now_us - now_us1) / 1000000.0f;
@@ -2879,22 +3129,22 @@
         body.Serial1count = 0;
       }
 
-      if(SwitchingPattern==1)//4-wheel mode
+      if(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE)//4-wheel mode
         MotorOperatingMode();
       
-      if((MasterSlaveSelection==0)&&(SwitchingPattern==1))//Slave && 4-wheel mode
+      if((MasterSlaveSelection==MASTER_SLAVE_SELECTION_SLAVE)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))//Slave && 4-wheel mode
         Read_Serial2();
-      else if((MasterSlaveSelection==1)&&(SwitchingPattern==1))//Host && 4-wheel mode
+      else if((MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))//Host && 4-wheel mode
         Read_Serial1();
 
-      if((MasterSlaveSelection==0)||(SwitchingPattern==0))//Slave || 2-wheel mode
+      if((MasterSlaveSelection==MASTER_SLAVE_SELECTION_SLAVE)||(SwitchingPattern==SWITCHING_PATTERN_TWO_WHEEL_MODE))//Slave || 2-wheel mode  
         TouchBiquadFilter();//Touch screen filter
         
       RemoteControlFiltering();//Remote control signal filtering
       ReadVoltage();//Battery
       print_data();//Serial port data printing
 
-      if(SwitchingPattern==0)//2-wheel mode
+      if(SwitchingPattern==SWITCHING_PATTERN_TWO_WHEEL_MODE)//2-wheel mode
         Robot_Tumble();//Machine fall detection
       LED_count++;
       if(LED_count>=LED_dt)
@@ -2904,12 +3154,12 @@
         LED_count = 0 ;
         if(LED_HL==1)
         {
-          digitalWrite(LED_Pin, LOW);   //On 
+          digitalWrite(BOARD_PIN_LED, LOW);   //On 
           LED_HL = 0;
         }
         else
         {
-          digitalWrite(LED_Pin, HIGH);  //Off 
+          digitalWrite(BOARD_PIN_LED, HIGH);  //Off 
           LED_HL = 1;
         }
         
@@ -2959,12 +3209,12 @@
       body.MotorVelocityF[1]= Motor2_Velocity_f;
 
 
-      if ((SwitchUser == 1) && (Slot_calibration_mark == 0))
+      if ((SwitchUser == SWITCH_USER_MODE_SAMPLE_TORQUE_M1) && (Slot_calibration_mark == 0))
       {
         Serial.print(" motor1 ");
         CalibrationCurrentSp(-sensor1.getAngle(), Motor1_Velocity_f, &motor1);
       }
-      if ((SwitchUser == 2) && (Slot_calibration_mark == 0))
+      if ((SwitchUser == SWITCH_USER_MODE_SAMPLE_TORQUE_M2) && (Slot_calibration_mark == 0))
       {
         Serial.print(" motor2 ");
         CalibrationCurrentSp(sensor2.getAngle(), Motor2_Velocity_f, &motor2);
@@ -2975,11 +3225,11 @@
       float bodyH = 0.06f;
       float bodyRoll = BodyRoll_f;
 
-      if(MasterSlaveSelection==1)//Host mode
+      if(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER)//Host mode
       {
-        if((sbus_swa == 0)||(RobotTumble == 1))
+        if((sbus_pid_gains_mode == REMOTE_CONTROL_PID_GAINS_MODE_OFF)||(RobotTumble == ROBOT_TUMBLE_YES))
         {
-          if (Communication_object == 0 && SwitchUser != 1 && SwitchUser != 2) //
+          if (Communication_object == COMMUNICATION_OBJECT_TWO_OR_FOUR_WHEEL_BALANCE && SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M1 && SwitchUser != SWITCH_USER_MODE_SAMPLE_TORQUE_M2) //
           {
             motor1.target = 0;
             motor2.target = 0;
@@ -3008,10 +3258,10 @@
 
           body_data_init();
         }
-        else if((sbus_swa >= 1)&&(RobotTumble == 0))//
+        else if((pid_gains_mode_is_enabled(sbus_pid_gains_mode))&&(RobotTumble == ROBOT_TUMBLE_NO))//
         {
 
-          if(SwitchingPattern==0)//2-wheel mode
+          if(SwitchingPattern==SWITCHING_PATTERN_TWO_WHEEL_MODE)//2-wheel mode
           {
             PIDcontroller_posture(time_dt);//PID controller
 
@@ -3025,7 +3275,7 @@
             body.xo3 = 0;
             body.xo4 = 0;
     
-            if(sbus_swc == 1)
+            if(sbus_roll_mode == REMOTE_CONTROL_ROLL_MODE_AUTO)
               bodyRoll = Roll_Pid.output;
         
             if(TargetLegLength==0)
@@ -3034,7 +3284,7 @@
               bodyH = TargetLegLength;
     
           }
-          else if((SwitchingPattern==1)&&(MasterSlaveSelection==1))//4-wheel mode && Host mode
+          else if((SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE)&&(MasterSlaveSelection==MASTER_SLAVE_SELECTION_MASTER))//4-wheel mode && Host mode
           {
             TrotGaitAlgorithm();//Gait
             PIDcontroller_posture_4wheel(time_dt);
@@ -3097,7 +3347,7 @@
       }
     
 
-      if(RobotTumble == 1)//Machine fall
+      if(RobotTumble == ROBOT_TUMBLE_YES)//Machine fall
       {
         bodyH = 0.06;
         bodyRoll = 0;
@@ -3115,7 +3365,7 @@
 
         
 
-      if(sbus_swb == 0)//Posture
+      if(sbus_posture_or_mark_mode == REMOTE_CONTROL_PM_POSTURE_MODE)//Posture
       {
 
         // Set the angle of the four servos
@@ -3142,7 +3392,14 @@
   }
 
 
-
+  /**
+   * @brief Determines the robot's behavior in 4-wheel mode based on RC switch positions.
+   *
+   * This function acts as a state machine for the 4-wheel mode, controlled by
+   * the `sbus_swc` and `sbus_swd` switches on the remote. It sets the `body.MotorMode`
+   * and adjusts parameters like step length, step height, and motor targets to
+   * switch between different walking, trotting, and posture control behaviors.
+   */
   void MotorOperatingMode(void)
   {
     if(motor1.controller!=MotionControlType::velocity)
@@ -3150,19 +3407,19 @@
       motor1.controller = MotionControlType::velocity;
       motor2.controller = MotionControlType::velocity;            
     }    
-    if(MasterSlaveSelection == 1)//Host
+    if(MasterSlaveSelection == MASTER_SLAVE_SELECTION_MASTER)//Host
     {
-      if(sbus_swc==0)
+      if(sbus_roll_mode==REMOTE_CONTROL_ROLL_MODE_MANUAL)
       {  
-          if((sbus_swd==0)&&(SwitchingPattern==1))
+          if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_DEFAULT)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 0; 
             body.BodyPitching4Wheel = 0;
-            body.xt =  mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -0.04, 0.04);//Step length 
+            body.xt =  mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.04, 0.04);//Step length 
             body.h  =  0.025;//mapf(sBus.channels[8], SBUS_chMin, SBUS_chMax, 0.005, 0.02);//Step height VRA
             //body.Ts =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0.5, 1);//Stride period S VRB
       
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -55, 55);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -55, 55);
             
             body.MT[0] = -BodyTurn;
             body.MT[1] = BodyTurn;
@@ -3170,37 +3427,37 @@
             body.MT[3] = BodyTurn;
             
           }
-          else if((sbus_swd==1)&&(SwitchingPattern==1))
+          else if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_PITCHING_ADJUST)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 1;  
 
             body.BodyPitching4Wheel = 0;
-            body.xt =  mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -0.04, 0.04);//Step length 
-            MovementSpeed =  -mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -33, 33);
+            body.xt =  mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.04, 0.04);//Step length 
+            MovementSpeed =  -mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -33, 33);
             
             body.h  =  0.025;//mapf(sBus.channels[8], SBUS_chMin, SBUS_chMax, 0.005, 0.025);//Step height VRA
             //body.Ts =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0.5, 1);//Stride period S VRB 
       
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -55, 55);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -55, 55);
             body.MT[0] = -BodyTurn + MovementSpeed;
             body.MT[1] = BodyTurn + MovementSpeed;
             body.MT[2] = -BodyTurn + MovementSpeed;
             body.MT[3] = BodyTurn + MovementSpeed;
                               
           }  
-          else if((sbus_swd==2)&&(SwitchingPattern==1))
+          else if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 2;   
       
               ///body.H_R
               body.xt =  0 ;//Step length
-            MovementSpeed =  -mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -111, 111);
+            MovementSpeed =  -mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
             body.h  =  0;//Step height
             //body.Ts =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0.5, 1);//Stride period S VRB 
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -111, 111);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
 
-            LegLength = mapf(sBus.channels[1], SBUS_chMin, SBUS_chMax, 0.03, -0.03); // leg height
-            body.BodyRoll4Wheel =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); //Roll
+            LegLength = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, 0.03, -0.03); // leg height
+            body.BodyRoll4Wheel =  mapf(sBus.channels[0], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.011, 0.011); //Roll
       
                     
             body.MT[0] = -BodyTurn + MovementSpeed;
@@ -3211,17 +3468,17 @@
             
           }       
       }
-      else if(sbus_swc==1)
+      else if(sbus_roll_mode==REMOTE_CONTROL_ROLL_MODE_AUTO)
       {
-          if((sbus_swd==0)&&(SwitchingPattern==1))
+          if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_DEFAULT)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 3;  
 
             ///body.H_R
             body.xt =  0 ;//Step length
-            MovementSpeed =  -mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -111, 111);
+            MovementSpeed =  -mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
             body.h  =  0;//Step height
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -111, 111);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
 
             LegLength = 0; // leg height
 
@@ -3231,21 +3488,21 @@
             body.MT[3] = BodyTurn + MovementSpeed;
 
             body.BodyPitching4Wheel = body.BodyPitching4WheelT;
-            body.BodyRoll4Wheel =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); //Roll
+            body.BodyRoll4Wheel =  mapf(sBus.channels[0], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -0.011, 0.011); //Roll
             
 
             
           }
-          else if((sbus_swd==1)&&(SwitchingPattern==1))
+          else if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_PITCHING_ADJUST)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 4; 
             ///body.H_R
             body.xt =  0 ;//Step length
             body.h  =  0;//Step height
-            MovementSpeed =  -mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -111, 111);
+            MovementSpeed =  -mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
             
             //body.Ts =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0.5, 1);//Stride period S VRB 
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -111, 111);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -111, 111);
             //
             LegLength = 0; // leg height
             body.BodyRoll4Wheel =  0; //Roll
@@ -3257,16 +3514,16 @@
 
                               
           }  
-          else if((sbus_swd==2)&&(SwitchingPattern==1))
+          else if((sbus_attitude_mode==REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)&&(SwitchingPattern==SWITCHING_PATTERN_FOUR_WHEEL_MODE))
           {
             body.MotorMode = 5; 
             ///body.H_R
             body.xt =  0 ;//Step length
             body.h  =  0;//Step height
-            MovementSpeed =  -mapf(sBus.channels[2], SBUS_chMin, SBUS_chMax, -33, 33);
+            MovementSpeed =  -mapf(sBus.channels[2], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -33, 33);
             
             //body.Ts =  mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, 0.5, 1);//Stride period S VRB 
-            BodyTurn = mapf(sBus.channels[3], SBUS_chMin, SBUS_chMax, -55, 55);
+            BodyTurn = mapf(sBus.channels[3], SBUS_CHANNEL_MIN, SBUS_CHANNEL_MAX, -55, 55);
             //body.BodyPitching4Wheel = body.BodyPitching4WheelT;
             LegLength = 0; // leg height
             body.BodyRoll4Wheel =  0; //Roll
@@ -3280,7 +3537,7 @@
           }          
       }      
     }
-    else if(MasterSlaveSelection == 0)//Slave
+    else if(MasterSlaveSelection == MASTER_SLAVE_SELECTION_SLAVE)//Slave
     {
       if(body.MotorMode == 0)
       {
@@ -3298,7 +3555,13 @@
   }
 
 
-
+  /**
+   * @brief Sets the PID gains for the 4-wheel mode controllers.
+   *
+   * This function defines a specific set of PID parameters tailored for the
+   * dynamics of the four-legged configuration, including gains for roll/pitch
+   * stabilization and touchscreen control.
+   */
   void PidParameter4wheel(void)
   {
 
@@ -3328,7 +3591,17 @@
   }
 
 
-
+  /**
+   * @brief Main PID control loop for posture control in 4-wheel mode.
+   *
+   * This function manages stability when the robot is in its four-legged stance.
+   * It uses PID controllers to:
+   * - Stabilize the body's roll and pitch based on IMU feedback.
+   * - Incorporate commands from the touchscreen for fine-grained posture adjustments.
+   * The output of these controllers modifies the leg positions to maintain balance.
+   *
+   * @param dt The time delta since the last call, in seconds.
+   */
   void PIDcontroller_posture_4wheel(float dt)
   {
     if((int)PidParameterTuning==0)
@@ -3359,11 +3632,11 @@
     TouchY_Pid.deriv = constrain(TouchY_Pid.deriv, -77, 77);
     TouchY_Pid.outD = TouchY_kd * TouchY_Pid.deriv;  
     
-    if((sbus_swd == 2)&&(sbus_swc == 1)&&(sbus_swa >= 1))//Top ball mode 
+    if((sbus_attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)&&(sbus_roll_mode == REMOTE_CONTROL_ROLL_MODE_AUTO)&&(pid_gains_mode_is_enabled(sbus_pid_gains_mode)))//Top ball mode 
     {
-      TouchX_Pid.output = TouchX_Pid.outP + TouchX_Pid.outI + TouchX_Pid.outD + sbus_vraf*0.002;
+      TouchX_Pid.output = TouchX_Pid.outP + TouchX_Pid.outI + TouchX_Pid.outD + sbus_top_ball_x_smoothed*0.002;
 
-      TouchY_Pid.output = TouchY_Pid.outP + TouchY_Pid.outI + TouchY_Pid.outD + sbus_vrbf*0.002;
+      TouchY_Pid.output = TouchY_Pid.outP + TouchY_Pid.outI + TouchY_Pid.outD + sbus_top_ball_y_smoothed*0.002;
 
       TouchX_Pid.output = -TouchX_Pid.output;
       TouchY_Pid.output = -TouchY_Pid.output;
@@ -3431,7 +3704,7 @@
       Touch.start = -2;    
     }  
     
-    if((sbus_swd != 2)||(sbus_swc != 1)||(body.MotorMode != 5))//Non-top ball mode 
+    if((sbus_attitude_mode != REMOTE_CONTROL_ATTITUDE_MODE_BALL_POISE)||(sbus_roll_mode != REMOTE_CONTROL_ROLL_MODE_AUTO)||(body.MotorMode != 5))//Non-top ball mode 
     {
       TouchX_Pid.integral = 0;
       TouchX_Pid.output = 0;
@@ -3466,7 +3739,7 @@
     float RollError = (-pitch_ok) - (-TargetBodyRoll);// - (-TouchX_Pid_outputF); 
     float PitchingError = (-roll_ok) - (TargetBodyPitching);// - (TouchY_Pid_outputF);  
     
-    if((sbus_swc == 1)&&(sbus_swa >= 1)&&(body.MotorMode==4))//Roll Pitching
+    if((sbus_roll_mode == REMOTE_CONTROL_ROLL_MODE_AUTO)&&(pid_gains_mode_is_enabled(sbus_pid_gains_mode))&&(body.MotorMode==4))//Roll Pitching
     {
         Roll_Pid.compute(RollError, dt); 
         body.BodyPitching4Wheel = -Pitching_Pid.compute(PitchingError, dt); 
