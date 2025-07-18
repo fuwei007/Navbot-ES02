@@ -81,9 +81,14 @@ git clone https://github.com/fuwei007/Navbot-ES02.git
 - Open Source ESP32 DIY Robot ES02: Learn Coding & Robotics | Educational Dual-Wheel Legged Bot:
   [![Video 1](https://img.youtube.com/vi/hujr_VRSyrw/0.jpg)](https://www.youtube.com/watch?v=hujr_VRSyrw)
 
-
 ---
 
+## Discord link
+| Link: [https://discord.gg/syywQ2CKN3](https://discord.gg/syywQ2CKN3)        |
+| :------------: |
+| <img src="Docs/image/Discord link.png" height="200"/> |
+
+---
 
 ## Acknowledgments
 
