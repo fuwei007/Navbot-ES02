@@ -13,6 +13,13 @@
 //#define ALL_CHANNELS
 
 
+struct
+{
+    int SBUS = 0;
+    int OTHER = 1;
+} CONTROL_TYPE;
+
+
 class FUTABA_SBUS
 {
 	public:
@@ -22,6 +29,7 @@ class FUTABA_SBUS
 		uint8_t  failsafe_status;
 		int sbus_passthrough;
 		int toChannels;
+		int controlType;
 		void begin(void);
 		int16_t Channel(uint8_t ch);
 		uint8_t DigiChannel(uint8_t ch);

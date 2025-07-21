@@ -397,6 +397,8 @@
     pinMode(LED_Pin, OUTPUT);
     digitalWrite(LED_Pin, LOW);   //亮
 
+
+    rp.init(&sBus);
     ble_init();
     wifi_init();
     web_sockets_client_init();
@@ -1081,7 +1083,7 @@
     static unsigned long now_ms = millis();
     
     sBus.FeedLine();
-    if (sBus.toChannels == 1)
+    if (sBus.toChannels == 1 || sBus.controlType != CONTROL_TYPE.SBUS)
     {
       sbus_dt_ms = millis()-now_ms;
       now_ms = millis();

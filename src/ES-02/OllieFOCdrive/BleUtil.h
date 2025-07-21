@@ -3,18 +3,25 @@
 #define BLE_DATA_SIZE 80
 
 
-typedef struct CmdManeuverTypDef{
-  int8_t roll;
-  int8_t height;
-  uint8_t linear_H;
-  uint8_t linear_L;
-  int8_t angular;
-  int8_t stable;
-  int8_t mode;
-  int8_t dir;
-  int8_t joy_y;
-  int8_t joy_x;
-}CmdManeuverTypDef;
+typedef struct CmdManeuverTypDef
+{
+    uint8_t HEADER1;       // 0x55
+    uint8_t HEADER2;       // 0xAA
+    uint8_t COMMAND;       // 0x10
+    uint8_t REMAINING;     // 0x00
+    uint8_t RETENTION_BIT; // Reserved bit
+    int8_t CH1_ROLL;       // Left/right tilt (-100~100)
+    uint8_t CH2_HEIGHT;    // Height (0~100)
+    int8_t CH3_PITCHING;   // Forward/backward movement (-100~100)
+    int8_t CH4_YAW;        // Rotation (-100~100)
+    uint8_t SWA_EN;        // On/off switch (0:stop, 1:start, 2:start+touch)
+    uint8_t SWB_POSTURE;   // Mode switch (0:posture, 1:marker)
+    uint8_t SWC_ROLL_MODE; // Tilt mode (0:manual, 1:auto)
+    uint8_t SWD_POSTURE_OPTION; // Posture option (0:default, 1:pitch, 2:ball balance)
+    int8_t VRA_BALL_X;     // Ball X (-5~5)
+    int8_t VRB_BALL_Y;     // Ball Y (-5~5)
+    uint8_t NULL2[5];      // Reserved bits
+} CmdManeuverTypDef;
 
 typedef struct CmdWifiTypDef{
   uint8_t header[2];

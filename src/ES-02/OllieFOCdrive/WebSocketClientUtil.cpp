@@ -17,13 +17,13 @@ void eventCallback(WStype_t type, uint8_t *payload, size_t length) {
   if (type == WStype_TEXT) {
     String payload_str = String((char *) payload);
 
-    Serial.print("Web Socket Client Receive A Message:");
-    Serial.println(payload_str);
+    // Serial.print("Web Socket Client Receive A Message:");
+    // Serial.println(payload_str);
 
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<500> doc;
     DeserializationError error = deserializeJson(doc, payload_str);
 
-    printf("eFuse Two Point: Supported\n");
+    // printf("eFuse Two Point: Supported\n");
     String mode_str = doc["mode"];
     if (mode_str == "basic") {
       rp.parseBasic(doc);

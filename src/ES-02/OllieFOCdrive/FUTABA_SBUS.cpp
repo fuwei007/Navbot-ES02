@@ -15,6 +15,7 @@ void FUTABA_SBUS::begin(){
 	failsafe_status = SBUS_SIGNAL_OK;
 	sbus_passthrough = 1;
 	toChannels = 0;
+    controlType = CONTROL_TYPE.SBUS;
 	bufferIndex=0;
 	feedState = 0;
 }
@@ -160,14 +161,16 @@ void FUTABA_SBUS::UpdateChannels(void) {
     }
   }*/
 
-  channels[0]  = ((sbusData[1]|sbusData[2]<< 8) & 0x07FF);
-  channels[1]  = ((sbusData[2]>>3|sbusData[3]<<5) & 0x07FF);
-  channels[2]  = ((sbusData[3]>>6|sbusData[4]<<2|sbusData[5]<<10) & 0x07FF);
-  channels[3]  = ((sbusData[5]>>1|sbusData[6]<<7) & 0x07FF);
-  channels[4]  = ((sbusData[6]>>4|sbusData[7]<<4) & 0x07FF);
-  channels[5]  = ((sbusData[7]>>7|sbusData[8]<<1|sbusData[9]<<9) & 0x07FF);
-  channels[6]  = ((sbusData[9]>>2|sbusData[10]<<6) & 0x07FF);
-  channels[7]  = ((sbusData[10]>>5|sbusData[11]<<3) & 0x07FF); // & the other 8 + 2 channels if you need them
+  if (controlType == CONTROL_TYPE.SBUS) {
+    channels[0]  = ((sbusData[1]|sbusData[2]<< 8) & 0x07FF);
+    channels[1]  = ((sbusData[2]>>3|sbusData[3]<<5) & 0x07FF);
+    channels[2]  = ((sbusData[3]>>6|sbusData[4]<<2|sbusData[5]<<10) & 0x07FF);
+    channels[3]  = ((sbusData[5]>>1|sbusData[6]<<7) & 0x07FF);
+    channels[4]  = ((sbusData[6]>>4|sbusData[7]<<4) & 0x07FF);
+    channels[5]  = ((sbusData[7]>>7|sbusData[8]<<1|sbusData[9]<<9) & 0x07FF);
+    channels[6]  = ((sbusData[9]>>2|sbusData[10]<<6) & 0x07FF);
+    channels[7]  = ((sbusData[10]>>5|sbusData[11]<<3) & 0x07FF); // & the other 8 + 2 channels if you need them
+  }
 
   channels[8]  = ((sbusData[12]|sbusData[13]<< 8) & 0x07FF);
   channels[9]  = ((sbusData[13]>>3|sbusData[14]<<5) & 0x07FF);

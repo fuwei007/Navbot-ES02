@@ -4,6 +4,7 @@
 #include "esp_adc_cal.h"
 #include "WiFiUtil.h"
 #include "esp_mac.h"
+#include "FUTABA_SBUS.h"
 
 // Message type constants
 struct
@@ -13,6 +14,59 @@ struct
     String SYS_RESTART = "sys_restart";            // System restart message
     String GET_DEVICE_INFO = "get_device_info";    // Device info request message
 } MESSAGE_TYPE;
+
+// Robot joystick axis index constants
+struct
+{
+    int LEFT_ROCKER_X = 0;   // Left joystick X-axis (horizontal) index
+    int LEFT_ROCKER_Y = 1;   // Left joystick Y-axis (vertical) index
+    int RIGHT_ROCKER_X = 3;  // Right joystick X-axis (horizontal) index
+    int RIGHT_ROCKER_Y = 2;  // Right joystick Y-axis (vertical) index
+
+    int BALANCE_MODE = 4; // Balance mode toggle (0-off, 1-on)
+    int SERVO_RESET = 5; // Servo calibration reset (0-off, 1-on)
+    int BALL_HANDLER = 6; // Ball handling mechanism (0-off, 2-on)
+    int POSTURE_MODE = 7; // Auto posture adjustment (0-off, 1-on)
+} ROBOT_ROCKER_SUBSCRIPT;
+
+
+struct
+{
+    String ROLL = "roll";
+    String HEIGHT = "height";
+    String LINEAR = "linear";
+    String ANGULAR = "angular";
+    String STABLE = "stable";
+    String MODE = "mode";
+    String BASIC = "basic";
+    String JOY_Y = "joy_y";
+    String JOY_X = "joy_x";
+
+
+    String BALANCE_MODE = "balance_mode";
+    String SERVO_RESET = "servo_reset";
+    String BALL_HANDLER = "ball_handler";
+    String POSTURE_MODE = "posture_mode";
+} MOTION_ATTRIBUTE;
+
+struct
+{
+    int ROCKER_INPUT_MAXIMUM = 100;
+    int ROCKER_INPUT_MINIMUM = -100;
+    int ROCKER_OUTPUT_MAXIMUM = 1666;
+    int ROCKER_OUTPUT_MINIMUM = 333;
+
+    int HEIGHT_INPUT_MAXIMUM = 85;
+    int HEIGHT_INPUT_MINIMUM = 32;
+    int HEIGHT_OUTPUT_MAXIMUM = 1666;
+    int HEIGHT_OUTPUT_MINIMUM = 333;
+
+    int SWITCH_INPUT_MAXIMUM = 1;
+    int SWITCH_INPUT_MAXIMUM_PRO = 2;
+    int SWITCH_INPUT_MINIMUM = 0;
+    int SWITCH_OUTPUT_MAXIMUM = 1666;
+    int SWITCH_OUTPUT_MINIMUM = 333;
+} MOTION_DATA_RANGE;
 
 /**
  * @class RobotProtocol
@@ -28,6 +82,15 @@ public:
     ~RobotProtocol();  // Destructor
 
     /**
+     * @brief Initialize the robot protocol module
+     * @param sBus Pointer to FUTABA_SBUS object for SBUS communication interface
+     *
+     * Must be called before using any protocol functions to set up SBUS communication.
+     * The pointer will be stored for future communication handling.
+     */
+    void init(FUTABA_SBUS *sBus);
+
+    /**
      * @brief Single protocol processing cycle
      *
      * Should be called periodically in main loop to process pending messages
@@ -40,14 +103,14 @@ public:
      *
      * Routes JSON content to appropriate handler functions
      */
-    void parseBasic(StaticJsonDocument<300> &doc);
+    void parseBasic(StaticJsonDocument<500> &doc);
 
 private:
     /**
      * @brief Print command content (debug)
      * @param doc JSON document to print
      */
-    void printDoc(StaticJsonDocument<300> &doc);
+    void printDoc(StaticJsonDocument<500> &doc);
 
     /**
      * @brief Handle system control commands
@@ -55,7 +118,7 @@ private:
      *
      * Processes system-level commands like WiFi config and restart
      */
-    void isSys(StaticJsonDocument<300> &doc);
+    void isSys(StaticJsonDocument<500> &doc);
 
     /**
      * @brief Handle motion control commands
@@ -63,7 +126,62 @@ private:
      *
      * Processes robot movement related commands
      */
-    void isMotion(StaticJsonDocument<300> &doc);
+    void isMotion(StaticJsonDocument<500> &doc);
+
+    /**
+     * @brief Linear interpolation mapping between input and output ranges
+     *
+     * @param input_value The input value to map
+     * @param input_min Minimum value of input range
+     * @param input_max Maximum value of input range
+     * @param output_min Minimum value of output range
+     * @param output_max Maximum value of output range
+     * @return float The mapped value in output range
+     *
+     * @note Returns -1 if input range is invalid (input_min == input_max)
+     * to maintain compatibility with AVR behavior
+     */
+    float mapf(long x, long in_min, long in_max, float out_min, float out_max);
+
+    /**
+     * @brief Convert joystick raw input to normalized float value
+     * @param value Raw joystick input
+     * @return Normalized float value in range [333, 1666]
+     *
+     * Note: The integer input is automatically converted to float during calculation.
+     */
+    float rockerConversion(int value);
+
+    /**
+     * @brief Convert raw height input to physical height value
+     * @param value Raw height input
+     * @return Actual height in meters as float
+     *
+     * Note: The integer input is automatically converted to float during calculation.
+     */
+    float heightConversion(int value);
+
+    /**
+     * @brief Convert boolean switch input to standardized float value
+     * @param value Boolean input (true/false)
+     * @return Float representation (0.0f for false, 1.0f for true)
+     *
+     * @note
+     * - Provides type conversion from digital to analog representation
+     * - Useful for consistent interface with systems expecting float values
+     */
+    float switchConversion(int value);
+
+    /**
+     * @brief Convert boolean switch input to standardized float value
+     * @param value Boolean input (true/false)
+     * @return Float representation (0.0f for false, 1.0f for true)
+     *
+     * @note
+     * - Provides type conversion from digital to analog representation
+     * - Useful for consistent interface with systems expecting float values
+     */
+    float switchPROConversion(int value);
 };
 
 // Global variables

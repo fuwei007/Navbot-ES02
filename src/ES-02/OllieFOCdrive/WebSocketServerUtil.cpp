@@ -6,7 +6,7 @@ WebSocketsServer websocket = WebSocketsServer(81); // Define a webSocket server 
 void webSocketEventCallback(uint8_t num, WStype_t type, uint8_t *payload, size_t length) {
   if (type == WStype_TEXT) {
     String payload_str = String((char *) payload);
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<500> doc;
     DeserializationError error = deserializeJson(doc, payload_str);
 
     String mode_str = doc["mode"];

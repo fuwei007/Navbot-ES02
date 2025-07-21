@@ -40,10 +40,6 @@ static void dev_name_build(char dev_name[]) {
   }
 
   sprintf(dev_name, "%s%s", robot_model_base, mac);
-  Serial.printf("get_dev_name:");
-  Serial.println(dev_name);
-
-  sprintf(dev_name, "%s%s", robot_model_base, "test");
   Serial.printf(dev_name);
   Serial.printf("\r\n");
 }
@@ -59,10 +55,8 @@ void wifi_set_ap(void) {
 
 String get_wifi_state(void) {
   String wifi_state = storage_util.read(&StorageKey.WIFI_STATE);
-  if (wifi_state.length() == 0) {
-    wifi_state = WIFI_STATE.CLIENT;
-    storage_util.write(&StorageKey.WIFI_SSID, "shiwulouerceng");
-    storage_util.write(&StorageKey.WIFI_PASSWORD, "asdfghjkl");
+  if (wifi_state == "null" || wifi_state.length() == 0) {
+    wifi_state = WIFI_STATE.SERVER;
   }
   return wifi_state;
 }
