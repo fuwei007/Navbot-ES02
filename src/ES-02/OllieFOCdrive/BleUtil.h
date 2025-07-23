@@ -5,11 +5,6 @@
 
 typedef struct CmdManeuverTypDef
 {
-    uint8_t HEADER1;       // 0x55
-    uint8_t HEADER2;       // 0xAA
-    uint8_t COMMAND;       // 0x10
-    uint8_t REMAINING;     // 0x00
-    uint8_t RETENTION_BIT; // Reserved bit
     int8_t CH1_ROLL;       // Left/right tilt (-100~100)
     uint8_t CH2_HEIGHT;    // Height (0~100)
     int8_t CH3_PITCHING;   // Forward/backward movement (-100~100)
@@ -40,7 +35,7 @@ enum BLE_STATE
 };
 enum BLE_CMD
 {
-  CMD_MANEUVER=0,
+  CMD_MANEUVER=0x10,
   CMD_WIFI=1,
   CMD_DEVICE_INFO=2,
   CMD_RESTART=9,

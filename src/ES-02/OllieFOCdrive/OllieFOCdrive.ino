@@ -379,6 +379,7 @@
   void body_data_init(void);
   void TrotGaitAlgorithm(void);//Trot gait
   void MotorOperatingMode(void);
+  bool OneSecondTick(void);
 
 
 
@@ -1138,8 +1139,8 @@
       if(Voltage<=7.4)
       {
         //sbus_swa = 0;
-        Serial.print(" Voltage:");
-        Serial.println(Voltage, 5);      
+        // Serial.print(" Voltage:");
+        // Serial.println(Voltage, 5);
       }
 
   /*
@@ -2391,9 +2392,9 @@
         SpeedPid.limit = 50;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 7;
-        AnglePid.I = 222;
-        AnglePid.D = 0.08;
+        AnglePid.P = 4;
+        AnglePid.I = 111;
+        AnglePid.D = 0.09;
         AnglePid.limit = 0.1;//Integral limit
         
     } 
@@ -2412,9 +2413,9 @@
         SpeedPid.limit = 50;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 9;
-        AnglePid.I = 222;
-        AnglePid.D = 0.11;
+        AnglePid.P = 4;
+        AnglePid.I = 111;
+        AnglePid.D = 0.09;
         AnglePid.limit = 0.1;//Integral limit
             
     } 
@@ -2822,8 +2823,11 @@
   void loop() {
     now_us = micros();
 
+    if(OneSecondTick()){
+      wifi_loop();
+    }
+
     ble_loop();
-    wifi_loop();
     web_sockets_client_loop();
     web_sockets_server_loop();
     web_server_util_loop();
@@ -3503,4 +3507,24 @@
 
 
   
+  }
+
+  //Generate a one-second tick
+  bool OneSecondTick(void)
+  {
+    static unsigned long lastMillis =0;
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - lastMillis >= 1000)
+    {
+      lastMillis = currentMillis;
+      return 1;
+    }
+    //Overflow handling
+    if(lastMillis > currentMillis)
+    {
+      lastMillis = currentMillis;
+    }
+
+    return 0;
   }

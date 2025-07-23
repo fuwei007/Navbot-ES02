@@ -15,6 +15,12 @@ struct
     String GET_DEVICE_INFO = "get_device_info";    // Device info request message
 } MESSAGE_TYPE;
 
+// Mode type constants
+struct
+{
+    String BASIC = "basic";
+} MODE_TYPE;
+
 // Robot joystick axis index constants
 struct
 {
@@ -30,15 +36,18 @@ struct
 } ROBOT_ROCKER_SUBSCRIPT;
 
 
+// communication protocol attributes
 struct
 {
-    String ROLL = "roll";
-    String HEIGHT = "height";
+    String MODE = "mode";
+    String TYPE = "type";
+
     String LINEAR = "linear";
     String ANGULAR = "angular";
     String STABLE = "stable";
-    String MODE = "mode";
-    String BASIC = "basic";
+
+    String ROLL = "roll";
+    String HEIGHT = "height";
     String JOY_Y = "joy_y";
     String JOY_X = "joy_x";
 
@@ -47,7 +56,16 @@ struct
     String SERVO_RESET = "servo_reset";
     String BALL_HANDLER = "ball_handler";
     String POSTURE_MODE = "posture_mode";
-} MOTION_ATTRIBUTE;
+
+
+    String WIFI_SSID = "ssid";
+    String WIFI_PASSWORD = "password";
+    String WIFI_STATE = "state";
+
+    String WEB_SOCKET_CLIENT_HOST = "web_socket_client_host";
+    String WEB_SOCKET_CLIENT_PORT = "web_socket_client_port";
+    String WEB_SOCKET_CLIENT_URL = "web_socket_client_url";
+} COMMUNICATION_PROTOCOL_ATTRIBUTES;
 
 struct
 {
@@ -56,8 +74,13 @@ struct
     int ROCKER_OUTPUT_MAXIMUM = 1666;
     int ROCKER_OUTPUT_MINIMUM = 333;
 
-    int HEIGHT_INPUT_MAXIMUM = 85;
-    int HEIGHT_INPUT_MINIMUM = 32;
+    int RIGHT_ROCKER_INPUT_MAXIMUM = 100;
+    int RIGHT_ROCKER_INPUT_MINIMUM = -100;
+    int RIGHT_ROCKER_OUTPUT_MAXIMUM = 1666;
+    int RIGHT_ROCKER_OUTPUT_MINIMUM = 333;
+
+    int HEIGHT_INPUT_MAXIMUM = 100;
+    int HEIGHT_INPUT_MINIMUM = -100;
     int HEIGHT_OUTPUT_MAXIMUM = 1666;
     int HEIGHT_OUTPUT_MINIMUM = 333;
 
@@ -89,6 +112,11 @@ public:
      * The pointer will be stored for future communication handling.
      */
     void init(FUTABA_SBUS *sBus);
+
+    /**
+     * Initialization and reset of the control channel
+     */
+    void sBusInit();
 
     /**
      * @brief Single protocol processing cycle

@@ -24,8 +24,8 @@ void eventCallback(WStype_t type, uint8_t *payload, size_t length) {
     DeserializationError error = deserializeJson(doc, payload_str);
 
     // printf("eFuse Two Point: Supported\n");
-    String mode_str = doc["mode"];
-    if (mode_str == "basic") {
+    String mode_str = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE];
+    if (mode_str == MODE_TYPE.BASIC) {
       rp.parseBasic(doc);
     }
   }

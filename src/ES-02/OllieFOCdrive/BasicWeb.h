@@ -5,693 +5,486 @@ const char BasicWeb[] PROGMEM = R"=====(
 
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>legged wheel robot web ctrl</title>
-  <style>
-    h2{
-        width: auto;
-        height: 60px;
-        line-height: 60px;
-        text-align: center;
-        font-family: serif ;
-        color: white;
-        background-color:cornflowerblue;
-        border-radius: 12px;
-    }
-    input{
-        width: 160px;
-        height: 30px;
-        margin: 0px;
-    }
-    .sliderLabel{
-        float: left;
-        text-align: center;
-        line-height: 30px;
-        height: 30px;  
-        /* border: 2px solid red; */
-        width: 200px;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Legged Wheel Robot Web Control</title>
+    <style>
+        h2 {
+            width: auto;
+            height: 60px;
+            line-height: 60px;
+            text-align: center;
+            font-family: serif;
+            color: white;
+            background-color: cornflowerblue;
+            border-radius: 12px;
+        }
 
-    .sliders{
-        width: 400px;
-        height: 150px;
-        /* border: 2px red solid; */
-        margin: 10px auto;
-        position: relative;
-    }
+        input {
+            width: 160px;
+            height: 30px;
+            margin: 0px;
+        }
 
-    .selects{
-        width: 300px;
-        height: 50px;
-        padding: 10px;
-        margin: 10px auto;
-        /* border: 2px red solid; */
-        position: relative;
-        border-radius: 10px;
+        .sliderLabel {
+            float: left;
+            text-align: center;
+            line-height: 30px;
+            height: 30px;
+            width: 200px;
+        }
 
-    }
-    .view {
-        width: 250px;
-        height: 50px;
-        padding: 0px;
-        margin: 20px auto;
-        /* border: 2px red solid; */
-    }
-    .view2 {
-        width: 140px;
-        height: 30px;
-        padding: 0px;
-        margin: 15px auto;
-        vertical-align:middle;
-        /* border: 2px red solid; */
-    }
-    .btn1 {
-        width: 80px;
-        height: 40px;
-        padding: 0px;
-        margin: 0px;
-        border-radius: 10px;
-        background-color: white;
-        display: inline-block;
-    }
-    form {
-        width: 80px;
-        height: 40px;
-        padding: 0px;
-        margin: 10px auto;
-        display: inline-block;
-    }
-    .buttons{
-        width: 300px;
-        height: 180px;
-        padding: 10px;
-        margin: 10px auto;
-        position: relative;
-        /* border: 2px red solid; */
-    }
-    .dir{
-        font-size: 15px;
-        /* font-family: 'Courier New', Courier, monospace; */
-        /* font-weight: bold; */
-        width: 100px;
-        height: 60px;
-        text-align: center;
-        border-radius: 12px;
-        background-color: white;
-        color: cornflowerblue;
-        border: 3px solid cornflowerblue;
-        padding: 0px;
-        transition: all 0.3s;
-    }
-    option {
-        text-align: center;
-        font-size: 15px;
-    }
+        .sliders {
+            width: 400px;
+            height: 150px;
+            margin: 10px auto;
+            position: relative;
+        }
 
-    #reset {
-        width: 100px;
-        height: 40px;
-        text-align: center;
-        border-radius: 12px;
-        border: 2px solid;
-        font-size: 15px;
-        display: inline-block;
-        position: absolute;
-        top: 10px;
-        left: 0px;
-        /* Top ,right, bottom ,left */
-    }
-    #gait_select {
-        width: 100px;
-        height: 40px;
-        border: 2px solid red;
-        font-size: 15px;
-        color: red;
-        border-radius: 12px;
-        display: inline-block;
-        position: absolute;
-        top: 10px;
-        left: 110px;
-    }
-    #gait_submit {
-        width: 100px;
-        height: 40px;
-        text-align: center;
-        border: 2px solid red;
-        color: red;
-        font-size: 15px;
-        display: inline-block;
-        background-color: white;
-        border-radius: 12px;
-        position: absolute;
-        top: 10px;
-        left: 220px;
-    }
-    #forward{
-        display: inline-block;
-        position: absolute;
-        top: 0px;
-        left: 110px;
-    }
-    #back{
-        display: inline-block;
-        position: absolute;
-        left: 110px;
-        top: 140px;
-    }
-    #jump{
-        display: inline-block;
-        position: absolute;
-        top: 70px;
-        left: 110px;
-    }
-    #right{
-        display: inline-block;
-        position: absolute;
-        top: 70px;
-        left: 220px;
-    }
-    #left{
-        display: inline-block;
-        position: absolute;
-        top: 70px;
-        left: 0px;
-    }
+        .view2 {
+            width: 140px;
+            height: 30px;
+            padding: 0px;
+            margin: 15px auto;
+            vertical-align: middle;
+        }
 
+        .switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 15px auto;
+            width: 205px;
+        }
 
+        .switch-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin: 5px 0;
+        }
 
+        .switch-label {
+            margin-right: 10px;
+            font-family: Arial, sans-serif;
+        }
 
-    
-    /* Switch  style */
-    /* The following effect can only be achieved if the input adds a switch to the checkbox class */
-    input[type='checkbox'].switch{
-        outline: none;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        position: relative;
-        width: 40px;
-        height: 20px;
-        background: #ccc;
-        border-radius: 10px;
-        transition: border-color .3s, background-color .3s;
-        margin: 0px 20px 0px 0px;
-    }
+        /* Switch style */
+        input[type='checkbox'].switch {
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            transition: border-color .3s, background-color .3s;
+        }
 
-    input[type='checkbox'].switch::after {
-        content: '';
-        display: inline-block;
-        width: 1rem;
-        height:1rem;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0, 0, 2px, #999;
-        transition:.4s;
-        top: 2px;
-        position: absolute;
-        left: 2px;
-    }
+        input[type='checkbox'].switch::after {
+            content: '';
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0, 0, 2px, #999;
+            transition: .4s;
+            top: 2px;
+            position: absolute;
+            left: 2px;
+        }
 
-    input[type='checkbox'].switch:checked {
-        background: rgb(78, 78, 240);
-    }
-    /* When input[type=checkbox] is selected: The pseudo-element shows that the position of the following style changes */
-    input[type='checkbox'].switch:checked::after {
-        content: '';
-        position: absolute;
-        left: 55%;
-        top: 2px;
-    }
-    *{
-        -webkit-touch-callout:none; 
-        -webkit-user-select:none; 
-        -khtml-user-select:none; 
-        -moz-user-select:none;
-        -ms-user-select:none; 
-        user-select:none;
-    }
-    
-    /*Joystick content*/
-    .row
-    {
-    display: inline-flex;
-    clear: both;
-    }
-    .columnLateral
-    {
-    float: left;
-    width: 15%;
-    min-width: 300px;
-    }
+        input[type='checkbox'].switch:checked {
+            background: rgb(78, 78, 240);
+        }
 
-    #joystick
-    {
-    border: 0px solid #FF0000;
-    }
+        input[type='checkbox'].switch:checked::after {
+            content: '';
+            position: absolute;
+            left: 55%;
+            top: 2px;
+        }
 
-    .dimSlide { transform: scaleX(2) rotate(0deg); width: 200px;position: relative}
-        
-  </style>
+        /* Three-state switch styles */
+        input[type='range'].three-state {
+            width: 80px;
+            height: 20px;
+            -webkit-appearance: none;
+            background: #ccc;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        input[type='range'].three-state::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: rgb(78, 78, 240);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .state-indicator {
+            display: flex;
+            justify-content: space-between;
+            width: 80px;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Joystick content */
+        .row {
+            display: flex;
+            justify-content: center;
+        }
+
+        #joystick {
+            border: 0px solid #FF0000;
+        }
+    </style>
 </head>
 
-<!-- onload The event is triggered immediately after the page loading is completed -->
-<body onload="javascript:socket_init()">
-    <h2>WL-PRO WiFi ctrl mode</h2>
-    <div class="view2">
-        <input type="checkbox" id="stable" class="switch" onclick="is_stable()" style="vertical-align:middle">Robot Go!</input>
-    </div>
-    <center><body>
-        <!-- Example of two JoyStick integrated in the page structure -->
-        <div class="row">
-           <div class="columnLateral">
-            <div id="joy1Div" style="width:200px;height:200px;margin:10px"></div>
-            
-            <!-- angular_vel=<input id="joy1X" type="text" style="border-style:none;width:30px;" /> -->
-            <!-- linear_vel=<input id="joy1Y" type="text" style="border-style:none;width:30px;" /> -->
-          </div>
-    </center>
-    <div class="sliders">
-        <div>
-            <input type="range" min="32" max="85" value="38" id="hSlider" oninput="setHeight()" />
-            <label class="sliderLabel" for="hSlider" id="hLabel">BaseHeight: 38mm</label>
-        </div>
-        <div>
-            <input type="range" min="-30" max="30" value="0" id="rollSlider" oninput="setroll()" />
-            <label class="sliderLabel" for="rollSlider" id="rollLabel">Roll: 0°</label>
-        </div>
-        
-        <div>
-            <input type="range" min="-200" max="200" value="0" id="linearSlider" oninput="setLinear()" />
-            <label class="sliderLabel" for="linearSlider" id="linearLabel">LinearVel: 0mm/s</label>
-        </div>
-        <div>
-            <input type="range" min="-100" max="100" value="0" id="angularSlider" oninput="setAngular()" />
-            <label class="sliderLabel" for="angularSlider" id="angularLabel">AngularVel: 0°/s</label>
+
+<body onload="socket_init()">
+<h2>WL-PRO WiFi Control Mode</h2>
+<div class="view2">
+    <input type="checkbox" id="stable" class="switch" onclick="is_stable()" style="vertical-align:middle">
+    <label for="stable">Robot Go!</label>
+</div>
+
+<div class="switch-container">
+    <div class="switch-item">
+        <span class="switch-label">Balance Mode</span>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <input type="range" id="balance_mode" class="three-state" min="0" max="2" step="1" value="0"
+                   onchange="updateThreeState('balance_mode')">
+            <div class="state-indicator">
+                <span>off</span>
+                <span>1</span>
+                <span>2</span>
+            </div>
         </div>
     </div>
-    
-    <div class="buttons">
-        <button class="dir" id="forward">Forward</button>
-        <button class="dir" id="back">Back</button>
-        <button class="dir" id="left">Left</button>
-        <button class="dir" id="right">Right</button>
-        <button class="dir" id="jump">Jump</button>
+    <div class="switch-item">
+        <span class="switch-label">Servo Reset</span>
+        <input type="checkbox" id="servo_reset" class="switch" onclick="updateToggle('servo_reset')">
     </div>
-   
+    <div class="switch-item">
+        <span class="switch-label">Ball Handler</span>
+        <input type="checkbox" id="ball_handler" class="switch" onclick="updateToggle('ball_handler')">
+    </div>
+    <div class="switch-item">
+        <span class="switch-label">Posture Mode</span>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <input type="range" id="posture_mode" class="three-state" min="0" max="2" step="1" value="0"
+                   onchange="updateThreeState('posture_mode')">
+            <div class="state-indicator">
+                <span>off</span>
+                <span>1</span>
+                <span>2</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- <p id="tips" align="center" style="font-size: 20;"></p> -->
-    <script>
-      
-        var socket; // socket communication
-        var g_roll=0; g_h=38; 
-        var g_linear = 0; g_angular = 0; g_stable = 0; 
-        var joyX = 0;
-        var joyY = 0;
-        // socket_init is triggered after the page loading is completed
-        function socket_init() {
-            // Initialize the websocket client
-            //socket = new WebSocket('ws://' + '192.168.4.1' + ':81/'); // AP mode
-            socket = new WebSocket('ws://' + window.location.hostname + ':81/'); // sta mode
-        }
+<div class="row">
+    <div id="joy1Div" style="width:200px;height:200px;margin:10px"></div>
+</div>
 
-        function setroll() {
-            val = document.getElementById("rollSlider").value;
-            val = parseInt(val);
-            document.getElementById("rollLabel").innerHTML = "Roll: " + val + "°";
-            g_roll = val;
-            send_data();
-        }  
-        function setHeight() {
-            val = document.getElementById("hSlider").value;
-            val = parseInt(val);
-            document.getElementById("hLabel").innerHTML = "BaseHeight: " + val + "mm";
-            g_h = val;
-            send_data();
-        }    
-       
-        function setLinear() {
-            val = document.getElementById("linearSlider").value;
-            val = parseInt(val);
-            document.getElementById("linearLabel").innerHTML = "LinearVel: " + val + "mm/s";
-            g_linear = val;
-            send_data();
-        }
-        function setAngular() {
-            val = document.getElementById("angularSlider").value;
-            val = parseInt(val);
-            document.getElementById("angularLabel").innerHTML = "AngularVel: " + val + "°/s";
-            g_angular = val;
-            send_data();
-        }
+<div class="sliders">
+    <div>
+        <input type="range" min="0" max="100" value="50" id="hSlider" oninput="setHeight()"/>
+        <label class="sliderLabel" for="hSlider" id="hLabel">BaseHeight: 38%</label>
+    </div>
+    <div>
+        <input type="range" min="-100" max="100" value="0" id="rollSlider" oninput="setroll()"/>
+        <label class="sliderLabel" for="rollSlider" id="rollLabel">Roll: 0%</label>
+    </div>
+</div>
 
-        
-        function send_data() {
-            var data = {'roll':g_roll,'height':g_h,
-                        'linear':g_linear,'angular':g_angular,'stable':g_stable,
-                        'mode':'basic','dir':"stop",
-                        'joy_y':joyY,'joy_x':joyX,};
+<script>
+    var socket;
+    var g_roll = 0;
+    var g_h = 38;
+    var g_stable = 0;
+    var joyX = 0;
+    var joyY = 0;
+    var sendData = {};
+
+    // Updated toggle states with three-state options
+    var toggleStates = {
+        balance_mode: 0,
+        servo_reset: 0,
+        ball_handler: 0,
+        posture_mode: 0
+    };
+
+    function socket_init() {
+        socket = new WebSocket('ws://' + window.location.hostname + ':81/'); // sta mode
+
+        socket.onopen = function () {
+            console.log("WebSocket connection established");
+        };
+
+        socket.onerror = function (error) {
+            console.log("WebSocket error: ", error);
+        };
+
+        socket.onclose = function () {
+            console.log("WebSocket connection closed");
+        };
+    }
+
+    function updateThreeState(toggleId) {
+        var slider = document.getElementById(toggleId);
+        toggleStates[toggleId] = parseInt(slider.value);
+        send_data();
+    }
+
+    function updateToggle(toggleId) {
+        var checkbox = document.getElementById(toggleId);
+        toggleStates[toggleId] = checkbox.checked ? 1 : 0;
+        send_data();
+    }
+
+    function setroll() {
+        let val = document.getElementById("rollSlider").value;
+        val = parseInt(val);
+        document.getElementById("rollLabel").innerHTML = "Roll: " + val + "%";
+        g_roll = val;
+        send_data();
+    }
+
+    function setHeight() {
+        let val = document.getElementById("hSlider").value;
+        val = parseInt(val);
+        document.getElementById("hLabel").innerHTML = "Height: " + val + "%";
+        g_h = (val - 50) * 2;
+        send_data();
+    }
+
+    function is_stable() {
+        var obj = document.getElementById("stable");
+        g_stable = obj.checked ? 1 : 0;
+        send_data();
+    }
+
+    function send_data() {
+        let data = {
+            'mode': "basic",
+            'roll': g_roll,
+            'height': g_h,
+            'stable': g_stable,
+            'joy_y': joyY,
+            'joy_x': joyX,
+            'balance_mode': toggleStates.balance_mode,
+            'servo_reset': toggleStates.servo_reset,
+            'ball_handler': toggleStates.ball_handler,
+            'posture_mode': toggleStates.posture_mode
+        };
+
+        if (JSON.stringify(data) === JSON.stringify(sendData)) return;
+
+        sendData = data;
+
+        if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(data));
-            // console.log(data);
+            console.log("Sent:", data);
         }
-        function is_stable() {
-            var obj = document.getElementById("stable");
-            if(obj.checked) {
-                // alert("is_stable checked");
-                g_stable = 1;
-            }else {
-                // alert("is_stable unchecked");
-                g_stable = 0;
-            }
+    }
+
+    var JoyStick = (function (container, parameters) {
+        parameters = parameters || {};
+        var title = parameters.title || "joystick",
+            width = parameters.width || 0,
+            height = parameters.height || 0,
+            internalFillColor = parameters.internalFillColor || "#00979C",
+            internalLineWidth = parameters.internalLineWidth || 2,
+            internalStrokeColor = parameters.internalStrokeColor || "#00979C",
+            externalLineWidth = parameters.externalLineWidth || 2,
+            externalStrokeColor = parameters.externalStrokeColor || "#0097BC",
+            autoReturnToCenter = parameters.autoReturnToCenter !== false;
+
+        var objContainer = document.getElementById(container);
+        var canvas = document.createElement("canvas");
+        canvas.id = title;
+        if (width === 0) width = objContainer.clientWidth;
+        if (height === 0) height = objContainer.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        objContainer.appendChild(canvas);
+        var context = canvas.getContext("2d");
+
+        var isPressing = false;
+        var circumference = 2 * Math.PI;
+        var internalRadius = (canvas.width - ((canvas.width / 2) + 10)) / 2;
+        var maxMoveStick = internalRadius + 5;
+        var externalRadius = internalRadius + 30;
+        var centerX = canvas.width / 2;
+        var centerY = canvas.height / 2;
+        var movedX = centerX;
+        var movedY = centerY;
+
+        if ("ontouchstart" in document.documentElement) {
+            canvas.addEventListener("touchstart", onTouchStart, true);
+            canvas.addEventListener("touchmove", onTouchMove, true);
+            document.addEventListener("touchend", onTouchEnd, true);
+        } else {
+            canvas.addEventListener("mousedown", onMouseDown, true);
+            canvas.addEventListener("mousemove", onMouseMove, true);
+            document.addEventListener("mouseup", onMouseUp, true);
+        }
+
+        drawExternal();
+        drawInternal();
+
+        function drawExternal() {
+            context.beginPath();
+            context.arc(centerX, centerY, externalRadius, 0, circumference, false);
+            context.lineWidth = externalLineWidth;
+            context.strokeStyle = externalStrokeColor;
+            context.stroke();
+        }
+
+        function drawInternal() {
+            context.beginPath();
+            if (movedX < internalRadius) movedX = maxMoveStick;
+            if ((movedX + internalRadius) > canvas.width) movedX = canvas.width - maxMoveStick;
+            if (movedY < internalRadius) movedY = maxMoveStick;
+            if ((movedY + internalRadius) > canvas.height) movedY = canvas.height - maxMoveStick;
+
+            context.arc(movedX, movedY, internalRadius, 0, circumference, false);
+            var grd = context.createRadialGradient(centerX, centerY, 5, centerX, centerY, 200);
+            grd.addColorStop(0, internalFillColor);
+            grd.addColorStop(1, internalStrokeColor);
+            context.fillStyle = grd;
+            context.fill();
+            context.lineWidth = internalLineWidth;
+            context.strokeStyle = internalStrokeColor;
+            context.stroke();
+        }
+
+        function postCoordinate() {
+            joyX = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+            joyY = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
             send_data();
         }
 
-        var buttons = document.getElementsByClassName("dir");
-        for(i=0;i<buttons.length;i++) {
-            buttons[i].addEventListener("mousedown",move,true);
-            buttons[i].addEventListener("mouseup",stop,true);
-            buttons[i].addEventListener("touchstart",move,true);
-            buttons[i].addEventListener("touchend",stop,true);
+        function releaseControl() {
+            joyX = 0;
+            joyY = 0;
+            send_data();
         }
-        function move() {
-            this.style = "background-color: cornflowerblue; color: white;";
-            var data = {'dir':this.id,'mode':'basic',
-                        'roll':g_roll,'height':g_h,
-                        'linear':g_linear,'angular':g_angular,'stable':g_stable,
-                        'joy_x':joyX,'joy_y':joyY,};
-            socket.send(JSON.stringify(data));
-            // console.log(data);
-        }
-        function stop() {
-            this.style = "background-color: white; color: cornflowerblue;";
-            var data = {'dir':"stop",'mode':'basic',
-                        'roll':g_roll,'height':g_h,
-                        'linear':g_linear,'angular':g_angular,'stable':g_stable,
-                        'joy_x':joyX,'joy_y':joyY,};
-            socket.send(JSON.stringify(data));
-            // console.log(data); // print test
-        }
-        
 
-        /*Joystick content*/
-        var JoyStick = (function(container, parameters)
-        {
-            parameters = parameters || {};
-            var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
-                width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
-                height = (typeof parameters.height === "undefined" ? 0 : parameters.height),
-                internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00979C" : parameters.internalFillColor),
-                internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
-                internalStrokeColor = (typeof parameters.internalStrokeColor === "undefined" ? "#00979C" : parameters.internalStrokeColor),
-                externalLineWidth = (typeof parameters.externalLineWidth === "undefined" ? 2 : parameters.externalLineWidth),
-                externalStrokeColor = (typeof parameters.externalStrokeColor ===  "undefined" ? "#0097BC" : parameters.externalStrokeColor),
-                autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter);
-            
-            // Create Canvas element and add it in the Container object
-            var objContainer = document.getElementById(container);
-            var canvas = document.createElement("canvas");
-            canvas.id = title;
-            if(width === 0) { width = objContainer.clientWidth; }
-            if(height === 0) { height = objContainer.clientHeight; }
-            canvas.width = width;
-            canvas.height = height;
-            objContainer.appendChild(canvas);
-            var context=canvas.getContext("2d");
-            
-            var isPressing = 0;
-            var isMoving = 0;
-            var isRelease = 0;
-            
-            var circumference = 2 * Math.PI;
-            var internalRadius = (canvas.width-((canvas.width/2)+10))/2;
-            var maxMoveStick = internalRadius + 5;
-            var externalRadius = internalRadius + 30;
-            var centerX = canvas.width / 2;
-            var centerY = canvas.height / 2;
-            var directionHorizontalLimitPos = canvas.width / 10;
-            var directionHorizontalLimitNeg = directionHorizontalLimitPos * -1;
-            var directionVerticalLimitPos = canvas.height / 10;
-            var directionVerticalLimitNeg = directionVerticalLimitPos * -1;
-            // Used to save current position of stick
-            var movedX = centerX;
-            var movedY = centerY;
-            
-            
-                
-            // Check if the device support the touch or not
-            if("ontouchstart" in document.documentElement)
-            {
-                
-                canvas.addEventListener("touchstart", onTouchStart, true);
-                canvas.addEventListener("touchmove", onTouchMove, true);
-                document.addEventListener("touchend", onTouchEnd, true);
-                /*
-                canvas.addEventListener("dragstart", onDragStart, false);
-                canvas.addEventListener("dragend", onDragEnd, false);
-                canvas.addEventListener("touchcancel", onTouchCancel, false);
-                */
+        function onTouchStart(event) {
+            isPressing = true;
+            event.preventDefault();
+        }
+
+        function onTouchMove(event) {
+            if (isPressing && event.targetTouches[0].target === canvas) {
+                event.preventDefault();
+                movedX = event.targetTouches[0].pageX;
+                movedY = event.targetTouches[0].pageY;
+
+                if (canvas.offsetParent.tagName.toUpperCase() === "BODY") {
+                    movedX -= canvas.offsetLeft;
+                    movedY -= canvas.offsetTop;
+                } else {
+                    movedX -= canvas.offsetParent.offsetLeft;
+                    movedY -= canvas.offsetParent.offsetTop;
+                }
+
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                drawExternal();
+                drawInternal();
+                postCoordinate();
             }
-            else
-            {
-                canvas.addEventListener("mousedown", onMouseDown, true);
-                canvas.addEventListener("mousemove", onMouseMove, true);
-                document.addEventListener("mouseup", onMouseUp, true);
+        }
+
+        function onTouchEnd() {
+            isPressing = false;
+            if (autoReturnToCenter) {
+                movedX = centerX;
+                movedY = centerY;
             }
-            // Draw the object
+            context.clearRect(0, 0, canvas.width, canvas.height);
             drawExternal();
             drawInternal();
+            releaseControl();
+        }
 
-            /**
-             * @desc Draw the external circle used as reference position
-             */
-            function drawExternal()
-            {
-                context.beginPath();
-                context.arc(centerX, centerY, externalRadius, 0, circumference, false);
-                context.lineWidth = externalLineWidth;
-                context.strokeStyle = externalStrokeColor;
-                context.stroke();
-            }
+        function onMouseDown(event) {
+            isPressing = true;
+        }
 
-            /**
-             * @desc Draw the internal stick in the current position the user have moved it
-             */
-            function drawInternal()
-            {
-                context.beginPath();
-                if(movedX<internalRadius) { movedX=maxMoveStick; }
-                if((movedX+internalRadius) > canvas.width) { movedX = canvas.width-(maxMoveStick); }
-                if(movedY<internalRadius) { movedY=maxMoveStick; }
-                if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
-                context.arc(movedX, movedY, internalRadius, 0, circumference, false);
-                // create radial gradient
-                var grd = context.createRadialGradient(centerX, centerY, 5, centerX, centerY, 200);
-                // Light color
-                grd.addColorStop(0, internalFillColor);
-                // Dark color
-                grd.addColorStop(1, internalStrokeColor);
-                context.fillStyle = grd;
-                context.fill();
-                context.lineWidth = internalLineWidth;
-                context.strokeStyle = internalStrokeColor;
-                context.stroke();
-            }
+        function onMouseMove(event) {
+            if (isPressing) {
+                movedX = event.pageX;
+                movedY = event.pageY;
 
-            function postCoordinate()
-            { 
-                joyX = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-                joyY = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-
-                send_data();
-            }
-
-            function releaseControl()
-            { 
-                joyX = 0;
-                joyY = 0;
-                
-                send_data();
-            }  
-            
-            /**
-             * @desc Events for manage touch
-             */
-            function noTouch(event)
-            {
-                isPressing = 0;
-                isMoving = 0;
-                isRelease = 0;
-            }
-
-            function onTouchStart(event) 
-            {
-                isPressing = 1;
-                isMoving = 0;
-                isRelease = 0;
-            }
-
-            function onTouchMove(event)
-            {
-                // Prevent the browser from doing its default thing (scroll, zoom)
-                event.preventDefault();
-                if(isPressing === 1 && event.targetTouches[0].target === canvas)
-                {
-                    isMoving = 1;
-                    isRelease = 0;
-                    
-                    movedX = event.targetTouches[0].pageX;
-                    movedY = event.targetTouches[0].pageY;
-                    // Manage offset
-                    if(canvas.offsetParent.tagName.toUpperCase() === "BODY")
-                    {
-                        movedX -= canvas.offsetLeft;
-                        movedY -= canvas.offsetTop;
-                    }
-                    else
-                    {
-                        movedX -= canvas.offsetParent.offsetLeft;
-                        movedY -= canvas.offsetParent.offsetTop;
-                    }
-                    // Delete canvas
-                    context.clearRect(0, 0, canvas.width, canvas.height);
-                    // Redraw object
-                    drawExternal();
-                    drawInternal();
-                    
-                    postCoordinate();
+                if (canvas.offsetParent.tagName.toUpperCase() === "BODY") {
+                    movedX -= canvas.offsetLeft;
+                    movedY -= canvas.offsetTop;
+                } else {
+                    movedX -= canvas.offsetParent.offsetLeft;
+                    movedY -= canvas.offsetParent.offsetTop;
                 }
-            } 
 
-            function onTouchEnd(event) 
-            {
-                //event.preventDefault();
-                isPressing = 0;
-                isMoving = 0;
-                isRelease = 1;
-                
-                // If required reset position store variable
-                if(autoReturnToCenter)
-                {
-                    movedX = centerX;
-                    movedY = centerY;
-                }
-                // Delete canvas
                 context.clearRect(0, 0, canvas.width, canvas.height);
-                // Redraw object
                 drawExternal();
                 drawInternal();
-                //canvas.unbind('touchmove');
-                
-                releaseControl();
+                postCoordinate();
             }
-    
+        }
 
-            /**
-             * @desc Events for manage mouse
-             */
-            function noMouse(event)
-            {
-                isPressing = 0;
-                isMoving = 0;
-                isRelease = 0;
+        function onMouseUp() {
+            isPressing = false;
+            if (autoReturnToCenter) {
+                movedX = centerX;
+                movedY = centerY;
             }
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawExternal();
+            drawInternal();
+            releaseControl();
+        }
 
-            function onMouseDown(event) 
-            {
-                isPressing = 1;
-                isMoving = 0;
-                isRelease = 0;
-            }
+        this.GetX = function () {
+            return (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+        };
 
-            function onMouseMove(event) 
-            {
-                if(isPressing === 1)
-                {
-                    isMoving = 1;
-                    isRelease = 0;
-                    
-                    movedX = event.pageX;
-                    movedY = event.pageY;
-                    // Manage offset
-                    if(canvas.offsetParent.tagName.toUpperCase() === "BODY")
-                    {
-                        movedX -= canvas.offsetLeft;
-                        movedY -= canvas.offsetTop;
-                    }
-                    else
-                    {
-                        movedX -= canvas.offsetParent.offsetLeft;
-                        movedY -= canvas.offsetParent.offsetTop;
-                    }
-                    // Delete canvas
-                    context.clearRect(0, 0, canvas.width, canvas.height);
-                    // Redraw object
-                    drawExternal();
-                    drawInternal();
-                    
-                    postCoordinate();
-                }
-            }
+        this.GetY = function () {
+            return ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+        };
+    });
 
-            function onMouseUp(event) 
-            {
-                isPressing = 0;
-                isMoving = 0;
-                isRelease = 1;
-                
-                // If required reset position store variable
-                if(autoReturnToCenter)
-                {
-                    movedX = centerX;
-                    movedY = centerY;
-                }
-                // Delete canvas
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                // Redraw object
-                drawExternal();
-                drawInternal();
-                //canvas.unbind('mousemove');
-            
-                releaseControl();
-            }
+    var joy1 = new JoyStick('joy1Div', {"title": "joystick"});
 
-
-            this.GetX = function ()
-            {
-                return (100*((movedX - centerX)/maxMoveStick)).toFixed();
-            };
-
-            /**
-             * @desc Normalizzed value of Y move of stick
-             * @return Integer from -100 to +100
-             */
-            this.GetY = function ()
-            {
-                return ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-            };
-            
-
-        });
-
-
-            var joy1Param = { "title": "1" };  
-            var Joy1 = new JoyStick('joy1Div', joy1Param);
-            var joy1X = document.getElementById("joy1X");
-            var joy1Y = document.getElementById("joy1Y");
-            setInterval(function()
-            { 
-                joyX = Joy1.GetX();
-                joyY = Joy1.GetY();
-                send_data();
-            }, 150);
-
-
-    </script> 
-                
-       
+    // Regular position update in case of continuous movement
+    setInterval(function () {
+        joyX = joy1.GetX();
+        joyY = joy1.GetY();
+        send_data();
+    }, 150);
+</script>
 </body>
 </html>
 
 
 
 )=====";
+

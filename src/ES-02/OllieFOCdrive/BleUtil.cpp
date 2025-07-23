@@ -190,69 +190,24 @@ void ble_loop(void) {
 void ble_cmd_maneuver_processing(void) {
 
   CmdManeuverTypDef *ble_maneuver;
-
-  if (ble_maneuver->HEADER1 != 0x55 || ble_maneuver->HEADER2 != 0xAA) {
-    ble_rx.state = BLE_STATE_IDLE;
-    return;
-  }
-
-  if (ble_maneuver->COMMAND != 0x10) {
-    ble_rx.state = BLE_STATE_IDLE;
-    return;
-  }
+  ble_maneuver = (CmdManeuverTypDef *) ble_rx.data;
 
   StaticJsonDocument<500> doc;
-  char jsonBuffer[500];
 
-  doc["roll"] = ble_maneuver->CH1_ROLL;
-  doc["height"] = ble_maneuver->CH2_HEIGHT;
-  doc["joy_x"] = ble_maneuver->CH3_PITCHING;
-  doc["joy_y"] = ble_maneuver->CH4_YAW;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE] = MODE_TYPE.BASIC;;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.STABLE] = 1;
 
-  switch (ble_maneuver->SWA_EN) {
-    case 0:
-      doc["dir"] = "stop";
-      doc["stable"] = false;
-      break;
-    case 1:
-    case 2:
-      doc["stable"] = true;
-      if (ble_maneuver->CH3_PITCHING > 0) doc["dir"] = "forward";
-      else if (ble_maneuver->CH3_PITCHING < 0) doc["dir"] = "back";
-      else if (ble_maneuver->CH4_YAW > 0) doc["dir"] = "right";
-      else if (ble_maneuver->CH4_YAW < 0) doc["dir"] = "left";
-      else doc["dir"] = "hold";
-      break;
-  }
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.ROLL] = ble_maneuver->CH1_ROLL;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.HEIGHT] = ble_maneuver->CH2_HEIGHT;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.JOY_Y] = ble_maneuver->CH3_PITCHING;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.JOY_X] = ble_maneuver->CH4_YAW;
 
-  switch (ble_maneuver->SWB_POSTURE) {
-    case 0:
-      doc["mode"] = "posture";
-      break;
-    case 1:
-      doc["mode"] = "mark";
-      break;
-  }
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.BALANCE_MODE] = ble_maneuver->SWA_EN;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.SERVO_RESET] = ble_maneuver->SWB_POSTURE;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.BALL_HANDLER] = ble_maneuver->SWD_POSTURE_OPTION;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.POSTURE_MODE] = ble_maneuver->SWC_ROLL_MODE;
 
-  const char *option = "default";
-  switch (ble_maneuver->SWD_POSTURE_OPTION) {
-    case 1:
-      option = "pitching_adjust";
-      break;
-    case 2:
-      option = "ball_poise";
-      break;
-  }
-  doc["posture_option"] = option;
-
-  serializeJson(doc, jsonBuffer);
-
-  String mode_str = doc["mode"].as<String>();
-  if (mode_str == "basic") {
-    rp.parseBasic(doc);
-  } else if (mode_str == "posture" || mode_str == "mark") {
-    rp.parseBasic(doc);
-  }
+  rp.parseBasic(doc);
 
   ble_rx.state = BLE_STATE_IDLE;
 }
@@ -293,11 +248,11 @@ void ble_cmd_wifi_processing(void) {
   }
 
   StaticJsonDocument<500> doc;
-  doc["model"] = "basic";
-  doc["type"] = MESSAGE_TYPE.SYS_WIFI;
-  doc["ssid"] = (const char *) ssid;
-  doc["password"] = (const char *) password;
-  doc["state"] = WIFI_STATE.CLIENT;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE] = MODE_TYPE.BASIC;;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.TYPE] = MESSAGE_TYPE.SYS_WIFI;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_SSID] = (const char *) ssid;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_PASSWORD] = (const char *) password;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_STATE] = WIFI_STATE.CLIENT;
   rp.parseBasic(doc);
   extern char wifi_mode;
   if (wifi_mode == WIFI_STA) WiFi.disconnect();
@@ -305,15 +260,15 @@ void ble_cmd_wifi_processing(void) {
 
 void ble_cmd_send_device_info() {
   StaticJsonDocument<500> doc;
-  doc["model"] = "basic";
-  doc["type"] = MESSAGE_TYPE.GET_DEVICE_INFO;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE] = MODE_TYPE.BASIC;;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.TYPE] = MESSAGE_TYPE.GET_DEVICE_INFO;
   rp.parseBasic(doc);
 }
 
 void ble_cmd_restart() {
   StaticJsonDocument<500> doc;
-  doc["model"] = "basic";
-  doc["type"] = MESSAGE_TYPE.SYS_RESTART;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE] = MODE_TYPE.BASIC;;
+  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.TYPE] = MESSAGE_TYPE.SYS_RESTART;
   rp.parseBasic(doc);
 }
 

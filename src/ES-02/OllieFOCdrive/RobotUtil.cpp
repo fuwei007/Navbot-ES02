@@ -19,6 +19,10 @@ void RobotProtocol::spinOnce(void) {
 
 void RobotProtocol::init(FUTABA_SBUS *sBus) {
   robot_util_s_bus = sBus;
+  sBusInit();
+}
+
+void RobotProtocol::sBusInit() {
   if (robot_util_s_bus->controlType != CONTROL_TYPE.SBUS) {
     robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_X] = heightConversion(0);
     robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_Y] = heightConversion(0);
@@ -28,6 +32,7 @@ void RobotProtocol::init(FUTABA_SBUS *sBus) {
     robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.SERVO_RESET] = switchConversion(0);
     robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.BALL_HANDLER] = switchConversion(0);
     robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.POSTURE_MODE] = switchConversion(0);
+    Serial.println("RobotProtocol->sBusInit");
   }
 }
 
@@ -46,7 +51,7 @@ void RobotProtocol::printDoc(StaticJsonDocument<500> &doc) {
 }
 
 void RobotProtocol::isSys(StaticJsonDocument<500> &doc) {
-  String type = doc["type"];
+  String type = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.TYPE];
   if (type.length() == 0 || type == "null") {
     return;
   }
@@ -54,9 +59,9 @@ void RobotProtocol::isSys(StaticJsonDocument<500> &doc) {
   Serial.println(type);
 
   if (type == MESSAGE_TYPE.SYS_WIFI) {
-    String ssid = doc["ssid"];
-    String password = doc["password"];
-    String state = doc["state"];
+    String ssid = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_SSID];
+    String password = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_PASSWORD];
+    String state = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_STATE];
 
     // save data
     if (state == WIFI_STATE.SERVER || state == WIFI_STATE.CLIENT || state == WIFI_STATE.CLOSE) {
@@ -74,9 +79,9 @@ void RobotProtocol::isSys(StaticJsonDocument<500> &doc) {
     Serial.println(storage_util.read(&StorageKey.WIFI_PASSWORD));
 
   } else if (type == MESSAGE_TYPE.SYS_WEB_SOCKET_SERVER) {
-    String host = doc["host"];
-    uint16_t port = doc["port"];
-    String url = doc["url"];
+    String host = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WEB_SOCKET_CLIENT_HOST];
+    uint16_t port = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WEB_SOCKET_CLIENT_PORT];
+    String url = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WEB_SOCKET_CLIENT_URL];
 
     // save data
     storage_util.write(&StorageKey.WEB_SOCKET_HOST, host);
@@ -99,59 +104,64 @@ void RobotProtocol::isSys(StaticJsonDocument<500> &doc) {
 
 float RobotProtocol::rockerConversion(int value) {
   return mapf(value,
-              MOTION_DATA_RANGE.ROCKER_INPUT_MAXIMUM,
-              MOTION_DATA_RANGE.ROCKER_INPUT_MINIMUM,
-              MOTION_DATA_RANGE.ROCKER_OUTPUT_MAXIMUM,
-              MOTION_DATA_RANGE.ROCKER_OUTPUT_MINIMUM
+              MOTION_DATA_RANGE.RIGHT_ROCKER_INPUT_MINIMUM,
+              MOTION_DATA_RANGE.RIGHT_ROCKER_INPUT_MAXIMUM,
+              MOTION_DATA_RANGE.RIGHT_ROCKER_OUTPUT_MINIMUM,
+              MOTION_DATA_RANGE.RIGHT_ROCKER_OUTPUT_MAXIMUM
   );
 }
 
 float RobotProtocol::heightConversion(int value) {
   return mapf(value,
-              MOTION_DATA_RANGE.HEIGHT_INPUT_MAXIMUM,
               MOTION_DATA_RANGE.HEIGHT_INPUT_MINIMUM,
-              MOTION_DATA_RANGE.HEIGHT_OUTPUT_MAXIMUM,
-              MOTION_DATA_RANGE.HEIGHT_OUTPUT_MINIMUM
+              MOTION_DATA_RANGE.HEIGHT_INPUT_MAXIMUM,
+              MOTION_DATA_RANGE.HEIGHT_OUTPUT_MINIMUM,
+              MOTION_DATA_RANGE.HEIGHT_OUTPUT_MAXIMUM
   );
 }
 
 float RobotProtocol::switchConversion(int value) {
   return mapf(value,
-              MOTION_DATA_RANGE.SWITCH_INPUT_MAXIMUM,
               MOTION_DATA_RANGE.SWITCH_INPUT_MINIMUM,
-              MOTION_DATA_RANGE.SWITCH_OUTPUT_MAXIMUM,
-              MOTION_DATA_RANGE.SWITCH_OUTPUT_MINIMUM
+              MOTION_DATA_RANGE.SWITCH_INPUT_MAXIMUM,
+              MOTION_DATA_RANGE.SWITCH_OUTPUT_MINIMUM,
+              MOTION_DATA_RANGE.SWITCH_OUTPUT_MAXIMUM
   );
 }
 
 float RobotProtocol::switchPROConversion(int value) {
   return mapf(value,
-              MOTION_DATA_RANGE.SWITCH_INPUT_MAXIMUM_PRO,
               MOTION_DATA_RANGE.SWITCH_INPUT_MINIMUM,
-              MOTION_DATA_RANGE.SWITCH_OUTPUT_MAXIMUM,
-              MOTION_DATA_RANGE.SWITCH_OUTPUT_MINIMUM
+              MOTION_DATA_RANGE.SWITCH_INPUT_MAXIMUM_PRO,
+              MOTION_DATA_RANGE.SWITCH_OUTPUT_MINIMUM,
+              MOTION_DATA_RANGE.SWITCH_OUTPUT_MAXIMUM
   );
 }
 
 void RobotProtocol::isMotion(StaticJsonDocument<500> &doc) {
 
-  int stable = doc[MOTION_ATTRIBUTE.STABLE];
+  int stable = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.STABLE];
 
   if (stable != 1) {
+    robot_util_s_bus->controlType = CONTROL_TYPE.SBUS;
+    if (robot_util_s_bus->toChannels != 1) {
+      // If the remote control is not connected, it will be reset.
+      sBusInit();
+    }
     return;
+  } else {
+    robot_util_s_bus->controlType = CONTROL_TYPE.OTHER;
   }
 
-  robot_util_s_bus->controlType = CONTROL_TYPE.OTHER;
-
   if (robot_util_s_bus->controlType != CONTROL_TYPE.SBUS) {
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_X] = heightConversion(doc[MOTION_ATTRIBUTE.HEIGHT]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_Y] = heightConversion(doc[MOTION_ATTRIBUTE.ROLL]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.RIGHT_ROCKER_X] = rockerConversion(doc[MOTION_ATTRIBUTE.JOY_Y]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.RIGHT_ROCKER_Y] = rockerConversion(doc[MOTION_ATTRIBUTE.JOY_X]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.BALANCE_MODE] = switchPROConversion(doc[MOTION_ATTRIBUTE.BALANCE_MODE]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.SERVO_RESET] = switchConversion(doc[MOTION_ATTRIBUTE.SERVO_RESET]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.BALL_HANDLER] = switchConversion(doc[MOTION_ATTRIBUTE.BALL_HANDLER]);
-    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.POSTURE_MODE] = switchConversion(doc[MOTION_ATTRIBUTE.POSTURE_MODE]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_X] = rockerConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.ROLL]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.LEFT_ROCKER_Y] = heightConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.HEIGHT]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.RIGHT_ROCKER_X] = rockerConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.JOY_X]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.RIGHT_ROCKER_Y] = rockerConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.JOY_Y]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.BALANCE_MODE] = switchPROConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.BALANCE_MODE]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.SERVO_RESET] = switchConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.SERVO_RESET]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.BALL_HANDLER] = switchConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.BALL_HANDLER]);
+    robot_util_s_bus->channels[ROBOT_ROCKER_SUBSCRIPT.POSTURE_MODE] = switchConversion(doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.POSTURE_MODE]);
   }
 }
 

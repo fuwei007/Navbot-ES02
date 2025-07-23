@@ -9,8 +9,8 @@ void webSocketEventCallback(uint8_t num, WStype_t type, uint8_t *payload, size_t
     StaticJsonDocument<500> doc;
     DeserializationError error = deserializeJson(doc, payload_str);
 
-    String mode_str = doc["mode"];
-    if (mode_str == "basic") {
+    String mode_str = doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE];
+    if (mode_str == MODE_TYPE.BASIC) {
       rp.parseBasic(doc);
     }
   }
