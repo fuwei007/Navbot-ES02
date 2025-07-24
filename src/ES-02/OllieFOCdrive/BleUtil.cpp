@@ -5,13 +5,14 @@
 #include <ArduinoJson.h>
 #include "BleUtil.h"
 #include "RobotUtil.h"
+#include "String.h"
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
-BleDataTypDef ble_rx;
+BleDataTypDef ble_rx, ble_tx;
 
 
 
@@ -23,15 +24,23 @@ BleDataTypDef ble_rx;
 #define CHARACTERISTIC_UUID_TX "6E400013-B5A3-F393-E0A9-E50E24DCCA9E"
 
 
+void ble_tx_processing(void);
+
+void ble_rx_processing(void);
+
+void ble_rx_data_add(uint8_t *data, uint8_t len);
+
 void ble_rx_data_clear(void);
 
 void ble_cmd_maneuver_processing(void);
 
 void ble_cmd_wifi_processing(void);
 
-void ble_cmd_send_device_info(void);
+void ble_cmd_json_processing(void);
 
 void ble_cmd_restart(void);
+
+bool ble_frames_validation(void);
 
 
 class MyCallbacks : public BLECharacteristicCallbacks
@@ -127,6 +136,33 @@ void ble_send_data(uint8_t *data, uint8_t len) {
   pTxCharacteristic->notify();
 }
 
+bool ble_frames_validation(void) {
+
+  Serial.println("-----------------ble_frames_validation-----------------");
+  static uint8_t last_remaining_pack;
+  static uint8_t last_cmd;
+  //Fixed header
+  if (ble_rx.frame[0] != 0x55) return false;
+  if (ble_rx.frame[1] != 0xAA) return false;
+  //If there is a subsequent frame in the previous data, the command must be the same.
+  if ((ble_rx.frame[2] != last_cmd) && (last_remaining_pack > 0)) {
+    Serial.println(ble_rx.frame[2] != last_cmd);
+    Serial.println(last_remaining_pack);
+    return false;
+  }
+  
+  if (ble_rx.frame[3] != ble_rx.remaining_pack) {
+    Serial.println(ble_rx.frame[3] != ble_rx.remaining_pack);
+    Serial.println(ble_rx.remaining_pack);
+
+    return false;
+  }
+
+  last_cmd = ble_rx.frame[2];
+  last_remaining_pack = ble_rx.remaining_pack;
+  return true;
+}
+
 void ble_rx_data_clear() {
   int i;
   for (i = 0; i < 50; i++) {
@@ -146,9 +182,16 @@ void ble_rx_data_add(uint8_t *data, uint8_t len) {
   }
 }
 
-void ble_loop(void) {
+void ble_rx_processing(void) {
   //The BLE data reception has been completed
   if (ble_rx.state == BLE_STATE_RECEIVE_OK) {
+
+    if (!ble_frames_validation()) {
+      ble_rx_data_clear();
+      Serial.println("ble deta err");
+      return;
+    }
+
     //BLE reply
     ble_send_data((uint8_t *) ble_rx.frame, 20);
     //Merge data packets
@@ -171,8 +214,8 @@ void ble_loop(void) {
           ble_cmd_wifi_processing();
         }
           break;
-        case CMD_DEVICE_INFO: {
-          ble_cmd_send_device_info();
+        case CMD_JSON: {
+          ble_cmd_json_processing();
         }
           break;
         case CMD_RESTART: {
@@ -185,6 +228,43 @@ void ble_loop(void) {
       ble_rx_data_clear();
     }
   }
+
+}
+
+
+void ble_tx_processing(void) {
+
+  if (ble_tx.state == BLE_STATE_SEND_READY && deviceConnected == true) {
+    // `ble_tx.index` is the index of the current data being sent.
+    //If it is greater than or equal to the total length,
+    //it indicates that the sending is complete or there is no data to be sent.
+    if (ble_tx.index >= ble_tx.len) {
+      ble_tx.state = BLE_STATE_SEND_FINISH;
+      Serial.printf("finish!!!  ble_tx.index >= ble_tx.len  , ble_tx.index : %d , ble_tx.len : %d \r\n", ble_tx.index,
+                    ble_tx.len);
+      return;
+    }
+
+    Serial.println("ble send frame");
+    ble_tx.state = BLE_STATE_SEND_BEING;
+
+    ble_tx.frame[0] = 0x55;
+    ble_tx.frame[1] = 0xAA;
+    ble_tx.frame[2] = ble_tx.cmd;
+    ble_tx.frame[3] = (ble_tx.len - ble_tx.index) / 15;
+    // ble_tx.frame[4] = (ble_tx.len) / 15 ;
+    memset(&ble_tx.frame[5], 0, 15);
+
+    memcpy(&ble_tx.frame[5], &ble_tx.data[ble_tx.index], 15);
+
+    ble_send_data((uint8_t *) ble_tx.frame, 20);
+    ble_tx.index += 15;
+  }
+}
+
+void ble_loop(void) {
+  ble_rx_processing();
+  ble_tx_processing();
 }
 
 void ble_cmd_maneuver_processing(void) {
@@ -254,15 +334,13 @@ void ble_cmd_wifi_processing(void) {
   doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_PASSWORD] = (const char *) password;
   doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.WIFI_STATE] = WIFI_STATE.CLIENT;
   rp.parseBasic(doc);
-  extern char wifi_mode;
-  if (wifi_mode == WIFI_STA) WiFi.disconnect();
 }
 
-void ble_cmd_send_device_info() {
+void ble_cmd_json_processing() {
+  String payload_str = String((char *) ble_rx.data);
   StaticJsonDocument<500> doc;
-  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.MODE] = MODE_TYPE.BASIC;;
-  doc[COMMUNICATION_PROTOCOL_ATTRIBUTES.TYPE] = MESSAGE_TYPE.GET_DEVICE_INFO;
-  rp.parseBasic(doc);
+  deserializeJson(doc, payload_str);
+  rp.parseJson(doc);
 }
 
 void ble_cmd_restart() {
@@ -280,25 +358,19 @@ void ble_test(void) {
   }
 }
 
-void ble_send_string(const String &message) {
-  // Maximum payload size per packet (fixed 15 bytes)
-  const uint8_t MAX_PAYLOAD_SIZE = 15;
-  // Calculate total number of packets (round up)
-  uint16_t total_length = message.length();
-  uint8_t total_packets = (total_length + MAX_PAYLOAD_SIZE - 1) / MAX_PAYLOAD_SIZE;
 
-  // Return immediately if string is empty
-  if (total_packets == 0) return;
+void ble_tx_add_data(char *data, int len) {
+  memcpy(ble_tx.data, data, len);
+  ble_tx.len = len;
+  ble_tx.index = 0;
+  ble_tx.state = BLE_STATE_SEND_READY;
+}
 
-  for (uint8_t packet_idx = 0; packet_idx < total_packets; packet_idx++) {
-    // Calculate current packet payload length
-    uint16_t start_pos = packet_idx * MAX_PAYLOAD_SIZE;
-    uint8_t payload_len = min(MAX_PAYLOAD_SIZE, (uint8_t)(total_length - start_pos));
-
-    // Send string fragment directly (no packet header)
-    ble_send_data((uint8_t * )(message.c_str() + start_pos), payload_len);
-
-    // Add short delay to prevent transmission congestion (adjust according to actual hardware)
-    delay(10);
-  }
+void ble_rx_add_string(String str) {
+  char buffer[300] = {0};
+  int len = str.length();
+  str.toCharArray(buffer, len);
+  ble_tx_add_data(buffer, len);
+  Serial.println("ble_tx_add_data:");
+  Serial.println(buffer);
 }

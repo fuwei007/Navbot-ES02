@@ -71,3 +71,7 @@ void web_sockets_client_loop(void) {
   webSocketClient.loop();
 }
 
+void web_sockets_client_send_message(String value) {
+  webSocketClient.sendTXT(value);
+}
+

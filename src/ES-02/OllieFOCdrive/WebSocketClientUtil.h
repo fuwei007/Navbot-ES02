@@ -18,3 +18,5 @@ void web_sockets_client_init();
  * Should be called continuously in the main program loop.
  */
 void web_sockets_client_loop();
+
+void web_sockets_client_send_message(String value);

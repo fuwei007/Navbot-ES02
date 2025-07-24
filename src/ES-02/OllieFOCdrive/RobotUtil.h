@@ -1,10 +1,12 @@
 #pragma once
 
+#include "driver/temp_sensor.h"
 #include <ArduinoJson.h>
 #include "esp_adc_cal.h"
 #include "WiFiUtil.h"
 #include "esp_mac.h"
 #include "FUTABA_SBUS.h"
+#include "FeedbackUtil.h"
 
 // Message type constants
 struct
@@ -101,8 +103,17 @@ struct
 class RobotProtocol
 {
 public:
+    double battery_voltage;
+    double pcb_version;
+    double fahrenheit;
+    double centigrade;
+    double battery_level;
+    int status;
+
     RobotProtocol();   // Constructor
     ~RobotProtocol();  // Destructor
+
+    double get_pcb_version();
 
     /**
      * @brief Initialize the robot protocol module
@@ -125,13 +136,32 @@ public:
      */
     void spinOnce(void);
 
+    double get_fahrenheit(void);
+
+    double get_degree_centigrade(void);
+
+    double get_battery_voltage(void);
+
+    double get_battery_level(void);
+
+    int get_robot_status(void);
+
     /**
-     * @brief Main command parser entry point
+     * @brief Main command parser entry point - Old
      * @param doc JSON document containing command
      *
      * Routes JSON content to appropriate handler functions
      */
     void parseBasic(StaticJsonDocument<500> &doc);
+
+
+    /**
+     * @brief Main command parser entry point - New
+     * @param doc JSON document containing command
+     *
+     * Routes JSON content to appropriate handler functions
+     */
+    void parseJson(StaticJsonDocument<500> &doc);
 
 private:
     /**
