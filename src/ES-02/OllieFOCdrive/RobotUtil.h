@@ -104,7 +104,7 @@ class RobotProtocol
 {
 public:
     double battery_voltage;
-    double pcb_version;
+    double pcb_version = 1.0;
     double fahrenheit;
     double centigrade;
     double battery_level;

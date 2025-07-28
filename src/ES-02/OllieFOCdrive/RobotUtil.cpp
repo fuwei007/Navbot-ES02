@@ -5,15 +5,7 @@ RobotProtocol rp;
 
 FUTABA_SBUS *robot_util_s_bus;
 
-
-void temp_init() {
-  // temp_sensor_config_t cfg = TSENS_CONFIG_DEFAULT();
-  // temp_sensor_set_config(cfg);
-  // temp_sensor_start();
-}
-
 RobotProtocol::RobotProtocol() {
-  temp_init();
   Serial.println("RobotProtocol:RobotProtocol");
 }
 
@@ -26,10 +18,10 @@ void RobotProtocol::spinOnce(void) {
 }
 
 double RobotProtocol::get_pcb_version() {
-  int sensorValue = analogRead(A0);
-  pcb_version = sensorValue * (3.3 / 4096) + 1;
-  Serial.print("pcb_version:");
-  Serial.println(pcb_version);
+  // int sensorValue = analogRead(A0);
+  // pcb_version = sensorValue * (3.3 / 4096) + 1;
+  // Serial.print("pcb_version:");
+  // Serial.println(pcb_version);
   return pcb_version;
 }
 
@@ -242,7 +234,7 @@ void RobotProtocol::parseJson(StaticJsonDocument<500> &doc) {
 }
 
 void RobotProtocol::parseBasic(StaticJsonDocument<500> &doc) {
-  printDoc(doc);
+  // printDoc(doc);
   isSys(doc);
   isMotion(doc);
 }
