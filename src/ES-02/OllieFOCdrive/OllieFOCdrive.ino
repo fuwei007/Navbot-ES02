@@ -10,6 +10,15 @@
   #include "filter.h"
   #include "touchscreen.h"
 
+  #include "BleUtil.h"
+  #include "WiFiUtil.h"
+  #include "WebSocketClientUtil.h"
+  #include "WebSocketServerUtil.h"
+  #include "WebServerUtil.h"
+  #include "esp_rom_sys.h"
+  #include "esp_log.h"
+  #include "driver/temperature_sensor.h"
+
   // commander communication instance
   Commander command = Commander(Serial);
 
@@ -373,6 +382,9 @@
   void body_data_init(void);
   void TrotGaitAlgorithm(void);//Trot gait
   void MotorOperatingMode(void);
+  bool OneSecondTick(void);
+  void BatCheck(void);
+  void TempCheck(void);
 
 
 
@@ -390,6 +402,17 @@
     FlashInit();//Read flash data
     pinMode(LED_Pin, OUTPUT);
     digitalWrite(LED_Pin, LOW);   //亮
+
+
+    rp.get_pcb_version();
+
+
+    rp.init(&sBus);
+    ble_init();
+    wifi_init();
+    web_sockets_client_init();
+    web_sockets_server_init();
+    web_server_util_init();
 
     body_data_init();
     //Initialize second-order low-pass filter
@@ -1069,7 +1092,7 @@
     static unsigned long now_ms = millis();
     
     sBus.FeedLine();
-    if (sBus.toChannels == 1)
+    if (sBus.toChannels == 1 || sBus.controlType != CONTROL_TYPE.SBUS)
     {
       sbus_dt_ms = millis()-now_ms;
       now_ms = millis();
@@ -1118,15 +1141,8 @@
         //BodyPitching = mapf(sBus.channels[9], SBUS_chMin, SBUS_chMax, -45, 45); 
       }
 
+      BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011);
 
-      BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); 
-
-      if(Voltage<=7.4)
-      {
-        //sbus_swa = 0;
-        Serial.print(" Voltage:");
-        Serial.println(Voltage, 5);      
-      }
 
   /*
       static int js = 0;
@@ -2377,9 +2393,9 @@
         SpeedPid.limit = 50;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 7;
-        AnglePid.I = 222;
-        AnglePid.D = 0.08;
+        AnglePid.P = 4;
+        AnglePid.I = 111;
+        AnglePid.D = 0.09;
         AnglePid.limit = 0.1;//Integral limit
         
     } 
@@ -2398,9 +2414,9 @@
         SpeedPid.limit = 50;//Integral limit    
 
         //Balance loop
-        AnglePid.P = 9;
-        AnglePid.I = 222;
-        AnglePid.D = 0.11;
+        AnglePid.P = 4;
+        AnglePid.I = 111;
+        AnglePid.D = 0.09;
         AnglePid.limit = 0.1;//Integral limit
             
     } 
@@ -2807,6 +2823,18 @@
 
   void loop() {
     now_us = micros();
+
+    if(OneSecondTick()){
+      wifi_loop();
+      BatCheck();
+      TempCheck();
+    }
+
+    ble_loop();
+    web_sockets_client_loop();
+    web_sockets_server_loop();
+    web_server_util_loop();
+
     //now_us2 = micros();
 
     // iterative function setting the outter loop target
@@ -3482,4 +3510,88 @@
 
 
   
+  }
+
+  //Generate a one-second tick
+  bool OneSecondTick(void)
+  {
+    static unsigned long lastMillis =0;
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - lastMillis >= 1000)
+    {
+      lastMillis = currentMillis;
+      return 1;
+    }
+    //Overflow handling
+    if(lastMillis > currentMillis)
+    {
+      lastMillis = currentMillis;
+    }
+
+    return 0;
+  }
+
+
+  //Voltage detection
+  uint16_t bat_check_num = 0;
+
+  void BatCheck(void) {
+
+    if (bat_check_num > 10) {
+      rp.battery_voltage = Voltage;
+      rp.battery_level = rp.get_battery_level();
+      if (Voltage <= 7.4) {
+        sbus_swa = 0;
+        Serial.print(" Voltage:");
+        Serial.println(Voltage, 5);
+      }
+      bat_check_num = 0;
+    } else
+      bat_check_num++;
+  }
+
+
+  //Temp detection
+  uint16_t temp_check_num = 0;
+
+  void TempCheck(void) {
+
+    if (temp_check_num > 10) {
+      // init
+      temperature_sensor_config_t temp_sensor = {
+              .range_min = 10,
+              .range_max = 50
+      };
+
+      // creat
+      temperature_sensor_handle_t temp_handle = NULL;
+      esp_err_t ret = temperature_sensor_install(&temp_sensor, &temp_handle);
+      if (ret != ESP_OK) {
+        Serial.println("Failed to install temperature sensor");
+        return;
+      }
+
+      temperature_sensor_enable(temp_handle);
+
+      float temp_value = 0;
+      ret = temperature_sensor_get_celsius(temp_handle, &temp_value);
+      if (ret == ESP_OK) {
+
+        Serial.print("Internal Temperature: ");
+        Serial.print(temp_value);
+        Serial.println(" °C");
+
+        rp.centigrade = temp_value;
+      } else {
+        Serial.println("Failed to read temperature");
+      }
+
+      // close
+      temperature_sensor_disable(temp_handle);
+      temperature_sensor_uninstall(temp_handle);
+
+      temp_check_num = 0;
+    } else
+      temp_check_num++;
   }
