@@ -17,7 +17,6 @@
   #include "WebServerUtil.h"
   #include "esp_rom_sys.h"
   #include "esp_log.h"
-  #include "driver/temperature_sensor.h"
 
   // commander communication instance
   Commander command = Commander(Serial);
@@ -3551,46 +3550,15 @@
       bat_check_num++;
   }
 
-
   //Temp detection
   uint16_t temp_check_num = 0;
 
   void TempCheck(void) {
-
     if (temp_check_num > 10) {
-      // init
-      temperature_sensor_config_t temp_sensor = {
-              .range_min = 10,
-              .range_max = 50
-      };
-
-      // creat
-      temperature_sensor_handle_t temp_handle = NULL;
-      esp_err_t ret = temperature_sensor_install(&temp_sensor, &temp_handle);
-      if (ret != ESP_OK) {
-        Serial.println("Failed to install temperature sensor");
-        return;
-      }
-
-      temperature_sensor_enable(temp_handle);
-
-      float temp_value = 0;
-      ret = temperature_sensor_get_celsius(temp_handle, &temp_value);
-      if (ret == ESP_OK) {
-
-        Serial.print("Internal Temperature: ");
-        Serial.print(temp_value);
-        Serial.println(" °C");
-
-        rp.centigrade = temp_value;
-      } else {
-        Serial.println("Failed to read temperature");
-      }
-
-      // close
-      temperature_sensor_disable(temp_handle);
-      temperature_sensor_uninstall(temp_handle);
-
+      Serial.print("Internal Temperature: ");
+      Serial.print(attitude.temp);
+      Serial.println(" °C");
+      rp.centigrade = attitude.temp;
       temp_check_num = 0;
     } else
       temp_check_num++;
