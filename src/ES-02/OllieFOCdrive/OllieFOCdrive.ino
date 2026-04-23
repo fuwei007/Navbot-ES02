@@ -33,11 +33,11 @@ Commander command = Commander(Serial);
 #define PID_ROLL_I_NO_TOUCH 1.5
 #define PID_ROLL_D_NO_TOUCH 0.0028
 #define PID_ROLL_LIMIT_NO_TOUCH 2
-#define PID_SPEED_P_NO_TOUCH 0.1
-#define PID_SPEED_I_NO_TOUCH 0.1
+#define PID_SPEED_P_NO_TOUCH 0.12
+#define PID_SPEED_I_NO_TOUCH 0.12
 #define PID_SPEED_D_NO_TOUCH 0
 #define PID_SPEED_LIMIT_NO_TOUCH 50
-#define PID_ANGLE_P_NO_TOUCH 50
+#define PID_ANGLE_P_NO_TOUCH 66
 #define PID_ANGLE_I_NO_TOUCH 222  // if stuttering/shaking when balancing, consider reducing this Integral value (ex. 165 instead of 222)
 #define PID_ANGLE_D_NO_TOUCH 1
 #define PID_ANGLE_LIMIT_NO_TOUCH 0.1
@@ -260,6 +260,13 @@ void ControlTorqueCompensation(char *cmd) {
 void Pid_Parameter_Tuning(char *cmd) {
   command.scalar(&PidParameterTuning, cmd);
 }
+void User_command(char *cmd) {
+  if (*cmd == '{') {
+    rp.json_test(cmd);
+  }else{
+    Pid_Parameter_Tuning(cmd);
+  }
+}
 
 void TwoKp(char *cmd) {
   command.scalar(&mahonyFilter.twoKp, cmd);
@@ -444,7 +451,7 @@ void setup() {
   delay(500);
 
   ble_init();
-  xTaskCreatePinnedToCore(cpu0_task, "cpu0_task", 2048, NULL, 0, NULL, 0);
+  xTaskCreatePinnedToCore(cpu0_task, "cpu0_task", 4096, NULL, 0, NULL, 0);
 
   body_data_init();
   // Initialize second-order low-pass filter
@@ -747,7 +754,9 @@ void setup() {
   command.add('G', ControlTorqueCompensation, "my ControlTorqueCompensation");
 #endif
 
-  command.add('U', Pid_Parameter_Tuning, "my Pid_Parameter_Tuning");
+  // command.add('U', Pid_Parameter_Tuning, "my Pid_Parameter_Tuning");
+  command.add('U', User_command, "my User_command");
+  
 
   // Run user commands to configure and the motor (find the full command list in docs.simplefoc.com)
   Serial.println("Motor ready.");
@@ -1135,7 +1144,7 @@ void bleCtrl(){
 
     if (attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_DEFAULT)  // Attitude control 1
     {
-      LegLength = mapf(ble_ctrler.ch[1], BLE_CH1_MIN, BLE_CH1_MAX, 0.06, 0.1);       // Leg height
+      LegLength = mapf(ble_ctrler.ch[1], BLE_CH1_MIN, BLE_CH1_MAX, 0.06, 0.09);       // Leg height
     } else if (attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_PITCHING_ADJUST)  // Attitude control 2
     {
       BodyPitching = mapf(ble_ctrler.ch[1], BLE_CH1_MIN, BLE_CH1_MAX, -12, 12);  // Pitching       + sbus_vrb
@@ -1182,7 +1191,7 @@ void RXsbus() {
       if (sBus.channels[1] <= 992)
         LegLength = mapf(sBus.channels[1], SBUS_CHANNEL_MIN, 992, 0.05, 0.06);  // Leg height
       else
-        LegLength = mapf(sBus.channels[1], 993, SBUS_CHANNEL_MAX, 0.06, 0.1);       // Leg height
+        LegLength = mapf(sBus.channels[1], 993, SBUS_CHANNEL_MAX, 0.06, 0.09);       // Leg height
     } else if (attitude_mode == REMOTE_CONTROL_ATTITUDE_MODE_PITCHING_ADJUST)  // Attitude control 2
     {
       // BodyRoll =  mapf(sBus.channels[0], SBUS_chMin, SBUS_chMax, -0.011, 0.011); //Roll
@@ -2514,7 +2523,7 @@ void PidParameter(void) {
     AnglePid.limit = PID_ANGLE_LIMIT_WITH_TOUCH;  // Integral limit
   }
 
-  YawPid.P = 11;
+  YawPid.P = 110;
   YawPid.I = 33;
   YawPid.D = 0;
   YawPid.limit = 0;

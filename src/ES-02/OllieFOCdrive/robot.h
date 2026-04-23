@@ -7,6 +7,13 @@
 #define LED2_TOGGLE() digitalWrite(LED2_BUILTIN, !digitalRead(LED2_BUILTIN));
 
 
+
+typedef struct {
+  const String GET_DEVICE_INFO = "get_device_info";
+} Message_TypeDef;
+
+extern const Message_TypeDef MESSAGE_TYPE;
+
 class RobotProtocol {
 public:
   double battery_voltage = 8.4f;
@@ -62,6 +69,9 @@ private:
   uint8_t _len;
   void UART_WriteBuf(void);
   void json_is_sys_set_name(StaticJsonDocument<300> &doc);
+  void feedback_send_message(void);
+  String get_device_info(void);
+  void send_device_info();
 };
 
 
