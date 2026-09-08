@@ -33,8 +33,8 @@ Commander command = Commander(Serial);
 #define PID_ROLL_I_NO_TOUCH 1.5
 #define PID_ROLL_D_NO_TOUCH 0.0028
 #define PID_ROLL_LIMIT_NO_TOUCH 2
-#define PID_SPEED_P_NO_TOUCH 0.12
-#define PID_SPEED_I_NO_TOUCH 0.12
+#define PID_SPEED_P_NO_TOUCH 0.3
+#define PID_SPEED_I_NO_TOUCH 0.3
 #define PID_SPEED_D_NO_TOUCH 0
 #define PID_SPEED_LIMIT_NO_TOUCH 50
 #define PID_ANGLE_P_NO_TOUCH 66
@@ -2986,7 +2986,7 @@ void loop() {
     ReadTouchDat();
 
   time_dt = (now_us - now_us1) / 1000000.0f;
-  if (time_dt >= 0.005f) {
+  if (time_dt >= 0.001f) {   //1kHz
     static int Serial1_count = 0;
     Serial1_count++;
     if (Serial1_count >= 5) {
